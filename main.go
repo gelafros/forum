@@ -2,8 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"forum/internal/migrations"
 	"log"
+
+	"forum/internal/migrations"
+	"forum/internal/server"
 
 	_ "github.com/mattn/go-sqlite3" // "_" means load the "sqlite3" driver but don't use it directly, but from within "Database/sql" package
 )
@@ -31,4 +33,6 @@ func main() {
 	}
 
 	log.Println("Forum Database connected successfully")
+
+	server.StartServer()
 }

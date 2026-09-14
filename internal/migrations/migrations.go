@@ -12,7 +12,6 @@ import (
 
 // RunSchema applies each new database migration and records it in schema_migrations.
 func RunSchema(forumDB *sql.DB) error {
-
 	// "schema_migrations" SQL command for creating the TABLE inside SQLite file (forum.db)
 	schemaMigrationsSQLCmd := `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -53,7 +52,6 @@ func RunSchema(forumDB *sql.DB) error {
 
 			if len(version) == 3 {
 				versionID, err := strconv.Atoi(version)
-
 				if err != nil {
 					return fmt.Errorf("conversion string to integer error: %w", err)
 				}
@@ -78,7 +76,7 @@ func RunSchema(forumDB *sql.DB) error {
 					return fmt.Errorf("execute migration: %s with error: %w ", filename, err)
 				}
 
-				_, err = forumDB.Exec(updateSchemaMigrations, versionID, time.Now().Format(time.RFC3339))
+				_, err = forumDB.Exec(updateSchemaMigrations, versionID, time.Now().Format(time.RFC3339)) // run the cmd with parmeters (?) versionID and time.Now()
 				if err != nil {
 					return fmt.Errorf("updating schema_migrations TABLE for ID: %d with error: %w", versionID, err)
 				}
