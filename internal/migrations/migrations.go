@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// RunSchema applies each new database migration and records it in schema_migrations.
+// Migration runner. RunSchema applies each new database migration and records it in schema_migrations.
 func RunSchema(forumDB *sql.DB) error {
 	// "schema_migrations" SQL command for creating the TABLE inside SQLite file (forum.db)
 	schemaMigrationsSQLCmd := `
@@ -42,7 +42,7 @@ func RunSchema(forumDB *sql.DB) error {
 	for _, file := range dirFiles {
 		filename := file.Name() // Take ONLY the string's name of the filename with method Name()
 		if file.IsDir() {
-			continue // skip the file if it IS directory (method IsDir())
+			continue // skip the file if it IS a directory (method IsDir())
 		}
 
 		// Conversion prefix of filename eg. "001" to int 1
@@ -71,12 +71,12 @@ func RunSchema(forumDB *sql.DB) error {
 				}
 
 				// Execute migration (.Exec() needs a string to execute)
-				_, err = forumDB.Exec(string(sqlBytes))
+				_, err = forumDB.Exec(string(sqlBytes)) // the content of each migration in ./db/migrations/
 				if err != nil {
 					return fmt.Errorf("execute migration: %s with error: %w ", filename, err)
 				}
 
-				_, err = forumDB.Exec(updateSchemaMigrations, versionID, time.Now().Format(time.RFC3339)) // run the cmd with parmeters (?) versionID and time.Now()
+				_, err = forumDB.Exec(updateSchemaMigrations, versionID, time.Now().Format(time.RFC3339)) // run the cmd with parmeters (?,?) versionID and time.Now()
 				if err != nil {
 					return fmt.Errorf("updating schema_migrations TABLE for ID: %d with error: %w", versionID, err)
 				}

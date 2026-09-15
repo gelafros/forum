@@ -11,12 +11,21 @@ import (
 )
 
 func main() {
-	forumDB, err := sql.Open("sqlite3", "./db/forum.db") // Open/Create "forum.db" Database (object)
+
+	// Open/Create "forum.db" Database (object)
+	forumDB, err := sql.Open("sqlite3", "./db/forum.db")
 	if err != nil {
-		log.Println("Error opening Database:", err)
+		log.Println("Error opening/creating the Database:", err)
 		return
 	}
 	defer forumDB.Close() // Close Database for freeing system resources
+
+	// SQL foreign-key enforcement
+	_, err = forumDB.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		log.Println("Error in activating foreign-key enforcement:", err)
+		return
+	}
 
 	// Check if Database is connecting succesfully
 	err = forumDB.Ping()
@@ -25,7 +34,7 @@ func main() {
 		return
 	}
 
-	// Create schema_migrations (DB history) table
+	// Create and Run schema_migrations (DB history) table
 	err = migrations.RunSchema(forumDB)
 	if err != nil {
 		log.Println(err)
@@ -34,5 +43,6 @@ func main() {
 
 	log.Println("Forum Database connected successfully")
 
+	// Opening Server :8080
 	server.StartServer()
 }

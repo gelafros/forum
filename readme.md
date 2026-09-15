@@ -38,6 +38,34 @@ Expected startup output:
 Forum Database connected successfully
 ```
 
+## Inspect the SQLite database
+
+From the repository root, open the database shell:
+
+```bash
+sqlite3 db/forum.db
+```
+
+Inside the SQLite prompt, these commands show the tables, a table definition,
+and the stored rows:
+
+```sql
+.tables
+.schema posts
+.headers on
+.mode column
+SELECT * FROM schema_migrations;
+SELECT * FROM users;
+SELECT * FROM posts;
+SELECT * FROM comments;
+```
+
+Exit the SQLite prompt with:
+
+```sql
+.quit
+```
+
 ## Running on another computer
 
 Commit and transfer `go.mod` and `go.sum` with the source code. On any machine
