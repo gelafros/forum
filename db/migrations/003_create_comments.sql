@@ -1,5 +1,5 @@
 CREATE TABLE comments (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY, -- comment_id
     user_id INTEGER NOT NULL,
     post_id INTEGER NOT NULL,
     content TEXT NOT NULL,
