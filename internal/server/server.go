@@ -1,32 +1,31 @@
 package server
 
 import (
+	"database/sql"
 	"log"
 	"net"
 	"net/http"
 )
 
-func StartServer() {
+func StartServer(forumDB *sql.DB) {
 	port := ":8080"
 
-	// Creates a file handler (any file in the folder) rooted at local folder
-	http.Handle("/templates", http.StripPrefix("/templates/", http.FileServer(http.Dir("templates"))))
-
-	// Handler for default home page "/"
-	http.HandleFunc("/", HomeHandler)
+	// Custom router handler (for multiple routes)
+	mux := http.NewServeMux()
+	RegisterRoutes(forumDB, mux)
 
 	// Check the port availability for starting server in
-	connection, portListerErr := net.Listen("tcp", port)
-	if portListerErr != nil {
-		log.Println("Error connecting in port: ", portListerErr)
+	connection, portListenErr := net.Listen("tcp", port)
+	if portListenErr != nil {
+		log.Println("Error connecting in port: ", portListenErr)
 		return
 	} else {
 		log.Println("The server is live at http://localhost:8080")
 		log.Println("Press \"Ctrl + C\" in terminal for terminate the server...")
 	}
 
-	// Start the server for "connection" net.Listener
-	serverErr := http.Serve(connection, nil)
+	// Start the server for "connection" net.Listener with custom Handlefunc Router Mux
+	serverErr := http.Serve(connection, mux)
 	if serverErr != nil {
 		log.Println("Error starting server: ", serverErr)
 		return

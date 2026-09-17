@@ -43,6 +43,6 @@ func main() {
 
 	log.Println("Forum Database connected successfully")
 
-	// Opening Server :8080
-	server.StartServer()
+	// Opening Server :8080 with object forumDB
+	server.StartServer(forumDB)
 }
