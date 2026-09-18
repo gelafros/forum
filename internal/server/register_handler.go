@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -11,7 +12,10 @@ type Data struct {
 	email    string
 }
 
+// User registration
 func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
+	var existingUserID int
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	// Check form's methods (only GET & POST allowed)
@@ -30,11 +34,16 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
 
 		tmpl, err := template.ParseFiles("templates/registration_form.html")
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "500 Internal Server Error", "An internal server error has happend")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+			log.Println("Status code: 500 - Error:", err) // terminal print errors (technical errors report)
 			return
 		}
 
-		tmpl.Execute(w, nil)
+		err = tmpl.Execute(w, nil)
+		if err != nil {
+			log.Println("Template execution failed. Error:", err)
+			return
+		}
 		return
 	}
 
@@ -50,12 +59,46 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
 			return
 		}
 
-		tmpl, err := template.ParseFiles("templates/registration_form.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "500 Internal Server Error", "An internal server error has happend")
-			return
+		// Searching forumDB for existing email
+		searchForumByEmail := "SELECT id FROM users WHERE email = ?"
+		err := forumDB.QueryRow(searchForumByEmail, formEmail).Scan(&existingUserID)
+
+		// 1. New Email Registration
+		if err == sql.ErrNoRows {
+
+			insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
+			_, err = forumDB.Exec(insertNewUser, formUsername, formEmail, formPassword)
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "New user registration failed")
+				log.Println("New user registration failed err:", err)
+				return
+			}
+
+			// Show Success Message
+			tmpl, err := template.ParseFiles("templates/registration_success.html")
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+				log.Println("Status code: 500 - Error:", err)
+				return
+			}
+
+			err = tmpl.Execute(w, nil)
+			if err != nil {
+				log.Println("Template execution failed. Error:", err)
+				return
+			}
+			log.Println("New User has been registered to forum...")
+			return // End when succesfully register a New user
 		}
 
-		tmpl.Execute(w, nil)
+		// 2. Email duplicate or Error
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Email query from ForumDB has Failed")
+			log.Println("Error in Email query from ForumDB:", err)
+			return
+		} else {
+			ErrorPageHandler(w, r, http.StatusConflict, "Conflict Error", "This Email is already belongs to another user")
+			return
+		}
 	}
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -21,9 +22,14 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "500 Internal Server Error", "An internal server error has happend")
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+		log.Println("Status code: 500 - Error:", err) // terminal print errors (technical errors report)
 		return
 	}
 
-	tmpl.Execute(w, nil)
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		log.Println("Template execution failed. Error:", err)
+		return
+	}
 }
