@@ -1,4 +1,4 @@
-CREATE TABLE comment_reactions (
+CREATE TABLE IF NOT EXISTS comment_reactions (
     id INTEGER PRIMARY KEY, -- comment_reactions_id
     user_id INTEGER NOT NULL,
     comment_id INTEGER NOT NULL,

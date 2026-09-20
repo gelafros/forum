@@ -1,6 +1,6 @@
 -- Cookies Creation
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     id INTEGER PRIMARY KEY, -- sessions_id
     user_id INTEGER NOT NULL,
     token TEXT NOT NULL UNIQUE,

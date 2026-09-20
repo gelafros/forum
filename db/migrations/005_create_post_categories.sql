@@ -1,4 +1,4 @@
-CREATE TABLE post_categories (
+CREATE TABLE IF NOT EXISTS post_categories (
     id INTEGER PRIMARY KEY, -- post_categories_id
     post_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,

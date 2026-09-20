@@ -1,41 +1,26 @@
 package main
 
 import (
-	"database/sql"
-	"log"
-
+	"forum/internal/db"
 	"forum/internal/migrations"
 	"forum/internal/server"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3" // "_" means load the "sqlite3" driver but don't use it directly, but from within "Database/sql" package
 )
 
 func main() {
 
-	// Open/Create "forum.db" Database (object)
-	forumDB, err := sql.Open("sqlite3", "./db/forum.db")
+	// Create forumDB.db (The DataBase file)
+	err := db.CreateDB()
 	if err != nil {
-		log.Println("Error opening/creating the Database:", err)
+		log.Println(err)
 		return
 	}
-	defer forumDB.Close() // Close Database for freeing system resources
+	defer db.ForumDB.Close() // Close Database for freeing system resources from sql.Open inside db.go
 
-	// SQL foreign-key enforcement
-	_, err = forumDB.Exec("PRAGMA foreign_keys = ON")
-	if err != nil {
-		log.Println("Error in activating foreign-key enforcement:", err)
-		return
-	}
-
-	// Check if Database is connecting succesfully
-	err = forumDB.Ping()
-	if err != nil {
-		log.Println("Error connecting to Database:", err)
-		return
-	}
-
-	// Create and Run schema_migrations (DB history) table
-	err = migrations.RunSchema(forumDB)
+	// Create tables inside ForumDB (Database)
+	err = migrations.CreateDBTables(db.ForumDB)
 	if err != nil {
 		log.Println(err)
 		return
@@ -43,6 +28,6 @@ func main() {
 
 	log.Println("Forum Database connected successfully")
 
-	// Opening Server :8080 with object forumDB
-	server.StartServer(forumDB)
+	// Starting Server :8080
+	server.StartServer()
 }

@@ -1,7 +1,8 @@
-package server
+package handlers
 
 import (
 	"database/sql"
+	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,7 +14,8 @@ type Data struct {
 }
 
 // User registration
-func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
+// func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var existingUserID int
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -61,13 +63,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
 
 		// Searching forumDB for existing email
 		searchForumByEmail := "SELECT id FROM users WHERE email = ?"
-		err := forumDB.QueryRow(searchForumByEmail, formEmail).Scan(&existingUserID)
+		err := db.ForumDB.QueryRow(searchForumByEmail, formEmail).Scan(&existingUserID)
 
 		// 1. New Email Registration
 		if err == sql.ErrNoRows {
 
 			insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
-			_, err = forumDB.Exec(insertNewUser, formUsername, formEmail, formPassword)
+			_, err = db.ForumDB.Exec(insertNewUser, formUsername, formEmail, formPassword)
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "New user registration failed")
 				log.Println("New user registration failed err:", err)

@@ -1,23 +1,22 @@
 package server
 
 import (
-	"database/sql"
+	"forum/internal/handlers"
 	"log"
 	"net"
 	"net/http"
 )
 
-func StartServer(forumDB *sql.DB) {
+func StartServer() {
 	port := ":8080"
 
-	// Custom router handler (for multiple routes)
-	mux := http.NewServeMux()
-	RegisterRoutes(forumDB, mux)
+	http.HandleFunc("/", handlers.HomeHandler)
+	http.HandleFunc("/register", handlers.RegisterHandler)
 
 	// Check the port availability for starting server in
-	connection, portListenErr := net.Listen("tcp", port)
-	if portListenErr != nil {
-		log.Println("Error connecting in port: ", portListenErr)
+	connection, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Println("Error connecting in port: ", err)
 		return
 	} else {
 		log.Println("The server is live at http://localhost:8080")
@@ -25,9 +24,9 @@ func StartServer(forumDB *sql.DB) {
 	}
 
 	// Start the server for "connection" net.Listener with custom Handlefunc Router Mux
-	serverErr := http.Serve(connection, mux)
-	if serverErr != nil {
-		log.Println("Error starting server: ", serverErr)
+	err = http.Serve(connection, nil)
+	if err != nil {
+		log.Println("Error starting server: ", err)
 		return
 	}
 }
