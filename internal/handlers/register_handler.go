@@ -14,7 +14,6 @@ type Data struct {
 }
 
 // User registration
-// func RegisterHandler(w http.ResponseWriter, r *http.Request, forumDB *sql.DB) {
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var existingUserID int
 
@@ -29,10 +28,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Loading Rgistration from (method.Get)
 	if r.Method == http.MethodGet {
 
-		if r.URL.Path != "/register" {
-			ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "The page you are looking for does not exist")
-			return
-		}
+		// if r.URL.Path != "/register" {
+		// 	ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "The page you are looking for does not exist")
+		// 	return
+		// }
 
 		tmpl, err := template.ParseFiles("templates/registration_form.html")
 		if err != nil {
@@ -51,25 +50,25 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Reading data from registration form (method.Post)
 	if r.Method == http.MethodPost {
-		formUsername := r.FormValue("username")
-		formEmail := r.FormValue("email")
-		formPassword := r.FormValue("password")
+		username := r.FormValue("username")
+		email := r.FormValue("email")
+		password := r.FormValue("password")
 
 		// Check if ALL required fields are NOT empty
-		if formUsername == "" || formEmail == "" || formPassword == "" {
+		if username == "" || email == "" || password == "" {
 			ErrorPageHandler(w, r, http.StatusBadRequest, "Registration Failure", "All fields in registration are required")
 			return
 		}
 
 		// Searching forumDB for existing email
 		searchForumByEmail := "SELECT id FROM users WHERE email = ?"
-		err := db.ForumDB.QueryRow(searchForumByEmail, formEmail).Scan(&existingUserID)
+		err := db.ForumDB.QueryRow(searchForumByEmail, email).Scan(&existingUserID)
 
 		// 1. New Email Registration
 		if err == sql.ErrNoRows {
 
 			insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
-			_, err = db.ForumDB.Exec(insertNewUser, formUsername, formEmail, formPassword)
+			_, err = db.ForumDB.Exec(insertNewUser, username, email, password)
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "New user registration failed")
 				log.Println("New user registration failed err:", err)

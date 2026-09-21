@@ -2,13 +2,12 @@ package migrations
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
-// Migration runner that create tables from /db/migrations sql files
+// Migration runner that creates Database's tables from /db/migrations sql files
 func CreateDBTables(forumDB *sql.DB) error {
 
 	// Read files from directory
@@ -23,7 +22,7 @@ func CreateDBTables(forumDB *sql.DB) error {
 			continue // skip the file if it IS a directory (method IsDir())
 		}
 
-		// Conversion prefix of filename eg. "001" to int 1
+		// Collect only the .sql files
 		if strings.HasSuffix(filename, ".sql") {
 
 			path := "./db/migrations/" + filename
@@ -37,9 +36,6 @@ func CreateDBTables(forumDB *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("execute migration: %s with error: %w ", filename, err)
 			}
-
-		} else {
-			return errors.New("invalid version number lenth") // If version prefix in filename has length > 3
 		}
 	}
 	return nil

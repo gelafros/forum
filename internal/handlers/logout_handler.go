@@ -1,0 +1,85 @@
+package handlers
+
+import (
+	"database/sql"
+	"forum/internal/db"
+	"html/template"
+	"log"
+	"net/http"
+	"time"
+)
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		existingUserID int
+		// loggedin       bool
+	)
+
+	if r.Method != http.MethodPost {
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Invalid http method detected")
+		log.Println("Status code: 405 - Error: Method Not Allowed") // terminal print errors (technical errors report)
+		return
+	}
+
+	// Read from page (r)
+	if r.Method == http.MethodPost {
+		cookie, err := r.Cookie("session_token")
+
+		if err != nil {
+			log.Println("Cookie problem in logging out user")
+			return
+		}
+		token := cookie.Value
+		err = db.ForumDB.QueryRow(`SELECT user_id FROM sessions WHERE sessions.token = ?`, token).Scan(&existingUserID)
+
+		if err == sql.ErrNoRows {
+			log.Println("No live session found")
+
+			tmpl, err := template.ParseFiles("templates/index.html")
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+				log.Println("Status code: 500 - Error:", err) // terminal print errors (technical errors report)
+				return
+			}
+
+			data := HomeData{
+				Username: "",
+				Loggedin: false,
+			}
+
+			err = tmpl.Execute(w, data)
+			if err != nil {
+				log.Println("Template execution failed. Error:", err)
+				return
+			}
+			return
+		}
+
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Error in Login procedure")
+			return
+		}
+
+		// Delete user's existing session
+		_, err = db.ForumDB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Failed to update/delete user session")
+			return
+		}
+
+		// Delete cookie from browser
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_token",
+			Value:    "",
+			Path:     "/",
+			Expires:  time.Unix(0, 0),
+			MaxAge:   -1,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		// Redirect to HomePage ("/")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+}

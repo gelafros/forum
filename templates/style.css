@@ -1,6 +1,6 @@
 /* Login / Register section*/
 
 .auth-actions {
-    display: flex;
+    display: flex; 
     gap: 10px;
 }

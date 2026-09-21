@@ -9,13 +9,21 @@
 <body>
     <h1>Forum Project for Zone01 Athens</h1>
     <div class="auth-actions">
-      <form action="/" method="GET">
-        <button type="submit">Login</button>
-      </form>
+      {{if .Loggedin}}
+        <span>Welcome, {{.Username}}</span><br>
 
-      <form action="/register" method="GET">
-        <button type="submit">Register</button>
-      </form>
+        <form action="/logout" method="POST">
+          <button type="submit">Logout</button>
+        </form>
+      {{else}}  
+       <form action="/login" method="GET">
+         <button type="submit">Login</button>
+        </form>
+
+       <form action="/register" method="GET">
+         <button type="submit">Register</button>
+       </form>
+      {{end}}
     </div>
       <!-- <a href="/register">Register</a> link to an endpoint-->
 </body>
