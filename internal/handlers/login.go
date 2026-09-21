@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Login user
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var (
 		existingUserID  int
@@ -39,7 +40,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Proccess data from page
+	// Read data from page
 	if r.Method == http.MethodPost {
 
 		username_Email := r.FormValue("identifier")
@@ -64,13 +65,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// New Session token
-		rawToken, err := uuid.NewRandom()
+		// Create new session token
+		rawToken, err := uuid.NewRandom() // Create random token
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Error in Login procedure")
 			return
 		}
-		token := rawToken.String()                  // Create random token
+		token := rawToken.String()                  // Transpose uuid token to string
 		expiresAt := time.Now().Add(24 * time.Hour) // Set session's duration for 24 Hours
 
 		// Add token's attributes in "sessions"'s table
@@ -82,7 +83,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Setting coockie for browser
+		// Create cookie for browser
 		cookie := &http.Cookie{
 			Name:     "session_token",
 			Value:    token,
@@ -93,7 +94,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, cookie)
 
-		// Show success message
+		// Show success Login message
 		tmpl, err := template.ParseFiles("templates/login_success.html")
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")

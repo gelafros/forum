@@ -16,6 +16,7 @@ func StartServer() {
 	http.HandleFunc("/register", handlers.RegisterHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
 	http.HandleFunc("/logout", handlers.LogoutHandler)
+	http.HandleFunc("/create_post", handlers.CreatePostHandler)
 
 	// Check the port availability for starting server in
 	connection, err := net.Listen("tcp", port)

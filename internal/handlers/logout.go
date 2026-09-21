@@ -12,7 +12,6 @@ import (
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	var (
 		existingUserID int
-		// loggedin       bool
 	)
 
 	if r.Method != http.MethodPost {
@@ -21,7 +20,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read from page (r)
+	// Read from page
 	if r.Method == http.MethodPost {
 		cookie, err := r.Cookie("session_token")
 
@@ -30,11 +29,10 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		token := cookie.Value
-		err = db.ForumDB.QueryRow(`SELECT user_id FROM sessions WHERE sessions.token = ?`, token).Scan(&existingUserID)
+		err = db.ForumDB.QueryRow("SELECT user_id FROM sessions WHERE sessions.token = ?", token).Scan(&existingUserID)
 
 		if err == sql.ErrNoRows {
-			log.Println("No live session found")
-
+			// log.Println("No live session found")
 			tmpl, err := template.ParseFiles("templates/index.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
