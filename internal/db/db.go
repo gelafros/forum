@@ -18,7 +18,7 @@ func CreateDB() error {
 		return err
 	}
 
-	// SQL foreign-key enforcement
+	// SQL foreign-key enforcement (for checking relationships between database tables.)
 	_, err = ForumDB.Exec("PRAGMA foreign_keys = ON")
 	if err != nil {
 		log.Println("Error in activating foreign-key enforcement:", err)

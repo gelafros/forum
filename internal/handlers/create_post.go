@@ -3,7 +3,6 @@ package handlers
 import (
 	"forum/internal/db"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -25,38 +24,38 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err = db.ForumDB.QueryRow("SELECT user_id FROM sessions WHERE id = ?", cookie.Value).Scan(&userID)
+	err = db.ForumDB.QueryRow("SELECT user_id FROM sessions WHERE token = ?", cookie.Value).Scan(&userID)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 	if r.Method == "GET" {
-		rows, err := db.ForumDB.Query(`SELECT id,name FROM categories`)
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-			return
-		}
+		// rows, err := db.ForumDB.Query(`SELECT id,name FROM categories`)
+		// if err != nil {
+		// 	ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+		// 	return
+		// }
 
-		defer rows.Close() // to be executed after the rows loop finishes
+		// defer rows.Close() // to be executed after the rows loop finishes
 
-		var categories []Category // an empty slice of Category structs
+		// var categories []Category // an empty slice of Category structs
 
-		for rows.Next() { // check each row
-			var category Category
-			err := rows.Scan(&category.ID, &category.Name) // reads the id and name from db and copies them to c.Id and c.Name
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-				return
-			}
-			categories = append(categories, category)
-		}
+		// for rows.Next() { // check each row
+		// 	var category Category
+		// 	err := rows.Scan(&category.ID, &category.Name) // reads the id and name from db and copies them to c.Id and c.Name
+		// 	if err != nil {
+		// 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+		// 		return
+		// 	}
+		// 	categories = append(categories, category)
+		// }
 
 		// Check if the loop procedure was successfull
-		if err := rows.Err(); err != nil {
-			log.Println("Error in searching categories:", err)
-			return
-		}
-
+		// if err := rows.Err(); err != nil {
+		// 	log.Println("Error in searching categories:", err)
+		// 	return
+		// }
+		categories, err := LoadCategories()
 		tmpl, err := template.ParseFiles("templates/create_post.html")
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
