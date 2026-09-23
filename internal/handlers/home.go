@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"database/sql"
-	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
+
+	"forum/internal/db"
 )
 
 type HomeData struct {
@@ -23,7 +24,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	if r.Method != http.MethodGet { // if method is not GET for calling home page then error
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Wrong http method detected. GET required")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Wrong http method detected")
+		log.Println("Wrong http method detected. GET required")
 		return
 	}
 
@@ -34,7 +36,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check cookie for show login Username
 	cookie, err := r.Cookie("session_token")
-
 	// Render the Home page as Guest
 	if err != nil {
 		loggedin = false
@@ -57,7 +58,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := cookie.Value
-	err = db.ForumDB.QueryRow(`
+	err = db.DB.QueryRow(`
 		SELECT users.username
 		FROM sessions
 		JOIN users ON sessions.user_id = users.id
@@ -108,5 +109,4 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 }

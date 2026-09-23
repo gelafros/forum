@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"database/sql"
-	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
+
+	"forum/internal/db"
 )
 
 type Data struct {
@@ -27,11 +28,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Loading Rgistration from (method.Get)
 	if r.Method == http.MethodGet {
-
-		// if r.URL.Path != "/register" {
-		// 	ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "The page you are looking for does not exist")
-		// 	return
-		// }
 
 		tmpl, err := template.ParseFiles("templates/registration_form.html")
 		if err != nil {
@@ -60,15 +56,15 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Searching forumDB for existing email
+		// Searching DB for existing email
 		searchForumByEmail := "SELECT id FROM users WHERE email = ?"
-		err := db.ForumDB.QueryRow(searchForumByEmail, email).Scan(&existingUserID)
+		err := db.DB.QueryRow(searchForumByEmail, email).Scan(&existingUserID)
 
 		// 1. New Email Registration
 		if err == sql.ErrNoRows {
 
 			insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
-			_, err = db.ForumDB.Exec(insertNewUser, username, email, password)
+			_, err = db.DB.Exec(insertNewUser, username, email, password)
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "New user registration failed")
 				log.Println("New user registration failed err:", err)
@@ -94,8 +90,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		// 2. Email duplicate or Error
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Email query from ForumDB has Failed")
-			log.Println("Error in Email query from ForumDB:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Email query from DB has Failed")
+			log.Println("Error in Email query from DB:", err)
 			return
 		} else {
 			ErrorPageHandler(w, r, http.StatusConflict, "Conflict Error", "This Email is already belongs to another user")

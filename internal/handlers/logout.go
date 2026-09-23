@@ -2,17 +2,16 @@ package handlers
 
 import (
 	"database/sql"
-	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
+
+	"forum/internal/db"
 )
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	var (
-		existingUserID int
-	)
+	var existingUserID int
 
 	if r.Method != http.MethodPost {
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Invalid http method detected")
@@ -23,16 +22,15 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Read from page
 	if r.Method == http.MethodPost {
 		cookie, err := r.Cookie("session_token")
-
 		if err != nil {
 			log.Println("Cookie problem in logging out user")
 			return
 		}
 		token := cookie.Value
-		err = db.ForumDB.QueryRow("SELECT user_id FROM sessions WHERE sessions.token = ?", token).Scan(&existingUserID)
+		err = db.DB.QueryRow("SELECT user_id FROM sessions WHERE sessions.token = ?", token).Scan(&existingUserID)
 
 		if err == sql.ErrNoRows {
-			// log.Println("No live session found")
+
 			tmpl, err := template.ParseFiles("templates/index.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
@@ -54,14 +52,15 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Error in Login procedure")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
 			return
 		}
 
 		// Delete user's existing session
-		_, err = db.ForumDB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
+		_, err = db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Failed to update/delete user session")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+			log.Println("Template execution failed. Error: failed to update/delete user session")
 			return
 		}
 

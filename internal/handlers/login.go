@@ -3,11 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"errors"
-	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
+
+	"forum/internal/db"
 
 	"github.com/google/uuid"
 )
@@ -29,13 +30,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		tmpl, err := template.ParseFiles("templates/login.html")
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Failed to load login page")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
+			log.Println("Status code: 500 - Error:", err)
 			return
 		}
 
 		err = tmpl.Execute(w, nil)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Failed to load Login page")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
+			log.Println("Status code: 500 - Error:", err)
 			return
 		}
 	}
@@ -51,7 +54,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Check credentials from ForumDB
+		// Check credentials from DB
 		existingUserID, err := checkCredentials(w, r, username_Email, password, existingUserID, existingUserPsw)
 		if err != nil {
 			log.Println("Login failure error:", err)
@@ -59,16 +62,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Delete user's existing session
-		_, err = db.ForumDB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
+		_, err = db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Failed to update/delete user session")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
+			log.Println("Status code: 500 - Error: failed to update/delete user session")
 			return
 		}
 
 		// Create new session token
 		rawToken, err := uuid.NewRandom() // Create random token
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Error in Login procedure")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
+			log.Println("Status code: 500 - Error:", err)
 			return
 		}
 		token := rawToken.String()                  // Transpose uuid token to string
@@ -76,9 +81,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Add token's attributes in "sessions"'s table
 		createSession := "INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)"
-		_, err = db.ForumDB.Exec(createSession, existingUserID, token, expiresAt)
+		_, err = db.DB.Exec(createSession, existingUserID, token, expiresAt)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Session problem with existing user")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
 			log.Println("session failure for logged in user error:", err)
 			return
 		}
@@ -107,14 +112,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Template execution failed. Error:", err)
 			return
 		}
-		log.Println("A user has been Logged in to forum...")
+		log.Println("A user has been Logged in to the forum...")
 	}
 }
 
-// Check users's credentials from ForumDB Database
+// Check users's credentials from DB Database
 func checkCredentials(w http.ResponseWriter, r *http.Request, username_Email, password string, existingUserID int, existingUserPsw string) (int, error) {
 	checkDBCredentials := "SELECT id, password FROM users WHERE username = ? OR email = ?"
-	err := db.ForumDB.QueryRow(checkDBCredentials, username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
+	err := db.DB.QueryRow(checkDBCredentials, username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
 
 	if err == sql.ErrNoRows {
 		ErrorPageHandler(w, r, http.StatusBadRequest, "Login Failure", "Invalid credentials")

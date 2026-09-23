@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"forum/internal/db"
 	"log"
+
+	"forum/internal/db"
 )
 
 type Category struct {
@@ -11,14 +12,14 @@ type Category struct {
 }
 
 // Load Categories for posts
-func LoadCategories() ([]Category, error) {
+func LoadCategories() []Category {
 	var categoryData Category
 
 	categoryList := []Category{}
-	queryResult, err := db.ForumDB.Query(`SELECT id, name FROM categories ORDER BY name`)
+	queryResult, err := db.DB.Query(`SELECT id, name FROM categories ORDER BY name`)
 	if err != nil {
 		log.Println("Error in searching for Categories")
-		return nil, err
+		return nil
 	}
 
 	defer queryResult.Close()
@@ -29,14 +30,14 @@ func LoadCategories() ([]Category, error) {
 		err = queryResult.Scan(&categoryData.ID, &categoryData.Name)
 		if err != nil {
 			log.Println("Error inside Query Categories")
-			return nil, err
+			return nil
 		}
 		categoryList = append(categoryList, categoryData) // Add Category Name in List
 	}
 
 	if err := queryResult.Err(); err != nil { // Check if the loop procedure was successfull
-		return nil, err
+		return nil
 	}
 
-	return categoryList, nil
+	return categoryList
 }
