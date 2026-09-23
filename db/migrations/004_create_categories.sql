@@ -6,6 +6,6 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Inserting if not exist category Names
 INSERT OR IGNORE INTO categories (name) VALUES
     ('General'),
-    ('Go'),
-    ('Zone01'),
-    ('Projects');
+    ('Tech'),
+    ('Funny'),
+    ('News');
