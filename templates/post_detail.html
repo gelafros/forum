@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Post.Title}} — Forum</title>
+    <link rel="stylesheet" href="/templates/style.css">
+</head>
+<body>
+
+<header class="site-header">
+    <div class="inner">
+        <h1><a href="/" style="color:#fff">Forum — Zone01 Athens</a></h1>
+        <div class="auth-actions">
+          {{if .Loggedin}}
+            <span>Welcome, {{.Username}}</span>
+            <form action="/logout" method="POST">
+              <button type="submit" class="btn-outline">Logout</button>
+            </form>
+          {{else}}
+            <form action="/login" method="GET">
+              <button type="submit">Login</button>
+            </form>
+            <form action="/register" method="GET">
+              <button type="submit">Register</button>
+            </form>
+          {{end}}
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="top-nav">
+        <a href="/">&larr; Back to Home</a>
+    </div>
+
+    <article class="post-detail">
+        <h1>{{.Post.Title}}</h1>
+        <p class="post-meta">
+            By <strong>{{.Post.Author}}</strong>
+            &middot; {{.Post.CreatedAt}}
+            {{if .Post.Categories}}&middot; <em>{{.Post.Categories}}</em>{{end}}
+        </p>
+        <div class="post-content">{{.Post.Content}}</div>
+    </article>
+
+    <section class="comments">
+        <h2>Comments</h2>
+        <p>Comments are not yet available.</p>
+    </section>
+
+</div>
+</body>
+</html>

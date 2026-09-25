@@ -15,6 +15,7 @@ func StartServer() {
 	http.HandleFunc("/login", handlers.LoginHandler)
 	http.HandleFunc("/logout", handlers.LogoutHandler)
 	http.HandleFunc("/create_post", handlers.CreatePostHandler)
+	http.HandleFunc("/post", handlers.PostDetailHandler)
 
 	log.Println("Server is running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
