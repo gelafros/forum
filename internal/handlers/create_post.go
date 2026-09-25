@@ -10,9 +10,10 @@ import (
 )
 
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" && r.Method != "POST" {
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method is not allowed", "Wrong http method detected.")
-		log.Println("Creating post error: method GET required")
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
+		log.Printf("CreatePostHandler: method %s not allowed\n", r.Method)
 		return
 	}
 	cookie, err := r.Cookie("session_token")

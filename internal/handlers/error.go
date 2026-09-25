@@ -16,6 +16,13 @@ type ErrorPageData struct {
 // Technical details are logged to the terminal, never sent to the browser.
 const errInternal = "Something went wrong. Please try again later."
 
+// errMethodNotAllowedTitle and errMethodNotAllowedMessage are the user-friendly
+// title and explanation shown when an endpoint receives an unsupported method.
+const (
+	errMethodNotAllowedTitle   = "Action Not Allowed"
+	errMethodNotAllowedMessage = "This action cannot be performed directly. Please use the navigation on the website."
+)
+
 // HTML Error Handler for printing errors in browser
 func ErrorPageHandler(w http.ResponseWriter, r *http.Request, status int, title, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

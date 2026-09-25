@@ -13,8 +13,9 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	var existingUserID int
 
 	if r.Method != http.MethodPost {
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Invalid http method detected")
-		log.Println("Status code: 405 - Error: Method Not Allowed") // terminal print errors (technical errors report)
+		w.Header().Set("Allow", "POST")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
+		log.Printf("LogoutHandler: method %s not allowed\n", r.Method)
 		return
 	}
 

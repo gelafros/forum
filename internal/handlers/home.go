@@ -69,8 +69,9 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	if r.Method != http.MethodGet { // if method is not GET for calling home page then error
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Wrong http method detected")
-		log.Println("Wrong http method detected. GET required")
+		w.Header().Set("Allow", "GET")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
+		log.Printf("HomeHandler: method %s not allowed\n", r.Method)
 		return
 	}
 

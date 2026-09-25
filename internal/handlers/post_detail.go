@@ -31,7 +31,9 @@ type PostDetailPageData struct {
 // Returns 404 when the post ID is missing or not found.
 func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Wrong http method detected.")
+		w.Header().Set("Allow", "GET")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
+		log.Printf("PostDetailHandler: method %s not allowed\n", r.Method)
 		return
 	}
 

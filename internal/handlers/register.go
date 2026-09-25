@@ -22,7 +22,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check form's methods (only GET & POST allowed)
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
-		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Wrong http method detected")
+		w.Header().Set("Allow", "GET, POST")
+		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
+		log.Printf("RegisterHandler: method %s not allowed\n", r.Method)
 		return
 	}
 
