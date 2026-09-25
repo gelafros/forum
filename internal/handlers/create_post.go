@@ -27,9 +27,11 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+
 	if r.Method == "GET" {
 
 		categories := LoadCategories()
+		log.Println("[]Categories:", categories)
 		tmpl, err := template.ParseFiles("templates/create_post.html")
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")

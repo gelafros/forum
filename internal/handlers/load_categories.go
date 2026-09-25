@@ -16,7 +16,7 @@ func LoadCategories() []Category {
 	var categoryData Category
 
 	categoryList := []Category{}
-	queryResult, err := db.DB.Query(`SELECT id, name FROM categories ORDER BY name`)
+	queryResult, err := db.DB.Query(`SELECT id, name FROM categories ORDER BY id`)
 	if err != nil {
 		log.Println("Error in searching for Categories")
 		return nil
@@ -35,7 +35,7 @@ func LoadCategories() []Category {
 		categoryList = append(categoryList, categoryData) // Add Category Name in List
 	}
 
-	if err := queryResult.Err(); err != nil { // Check if the loop procedure was successfull
+	if err := queryResult.Err(); err != nil { // Check if the loop from .Next procedure was successfull
 		return nil
 	}
 
