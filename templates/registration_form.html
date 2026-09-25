@@ -3,26 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Form</title>
+    <title>Register — Forum</title>
     <link rel="stylesheet" href="/templates/style.css">
 </head>
 <body>
-    <form method="POST" action="/register">
-        <h1>Registration</h1>
-        <label for="username">Username*</label><br>
-        <input type="text" id="username" name="username" placeholder="Select a username" required><br><br>
 
-        <label for="email">Email*</label><br>
-        <input type="email" id="email" name="email" placeholder="Enter your email" required><br><br>
+<header class="site-header">
+    <div class="inner">
+        <h1><a href="/" style="color:#fff">Forum — Zone01 Athens</a></h1>
+    </div>
+</header>
 
-        <label for="password">Password*</label><br>
-        <input type="password" id="password" name="password" placeholder="Create a password" required><br><br><br><br>
+<div class="container">
+    <div class="form-card">
+        <h1>Register</h1>
+        <form method="POST" action="/register">
 
-        <label><i>* = Required fields</i></label>
+            <div class="form-group">
+                <label for="username">Username <span style="color:#ef4444">*</span></label>
+                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+            </div>
 
-        <br><br>
-        <button type="submit">Submit</button>
-    </form>
-  
+            <div class="form-group">
+                <label for="email">Email <span style="color:#ef4444">*</span></label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password <span style="color:#ef4444">*</span></label>
+                <input type="password" id="password" name="password" placeholder="Create a password" required>
+            </div>
+
+            <button type="submit">Create Account</button>
+        </form>
+        <div class="form-links">
+            <a href="/login">Already have an account? Login</a>
+            &nbsp;&middot;&nbsp;
+            <a href="/">Back to Home</a>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
