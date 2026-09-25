@@ -12,6 +12,10 @@ type ErrorPageData struct {
 	Message string
 }
 
+// errInternal is the safe message shown to users for all 500 errors.
+// Technical details are logged to the terminal, never sent to the browser.
+const errInternal = "Something went wrong. Please try again later."
+
 // HTML Error Handler for printing errors in browser
 func ErrorPageHandler(w http.ResponseWriter, r *http.Request, status int, title, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

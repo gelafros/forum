@@ -31,14 +31,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		tmpl, err := template.ParseFiles("templates/registration_form.html")
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-			log.Println("Status code: 500 - Error:", err) // terminal print errors (technical errors report)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("RegisterHandler template parse error:", err)
 			return
 		}
 
 		err = tmpl.Execute(w, nil)
 		if err != nil {
-			log.Println("Template execution failed. Error:", err)
+			log.Println("RegisterHandler template execute error:", err)
 			return
 		}
 		return
@@ -66,22 +66,22 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
 			_, err = db.DB.Exec(insertNewUser, username, email, password)
 			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "New user registration failed")
-				log.Println("New user registration failed err:", err)
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("RegisterHandler insert user error:", err)
 				return
 			}
 
 			// Show Success Message
 			tmpl, err := template.ParseFiles("templates/registration_success.html")
 			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-				log.Println("Status code: 500 - Error:", err)
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("RegisterHandler success template parse error:", err)
 				return
 			}
 
 			err = tmpl.Execute(w, nil)
 			if err != nil {
-				log.Println("Template execution failed. Error:", err)
+				log.Println("RegisterHandler success template execute error:", err)
 				return
 			}
 			log.Println("New User has been registered to forum...")
@@ -90,11 +90,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		// 2. Email duplicate or Error
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Email query from DB has Failed")
-			log.Println("Error in Email query from DB:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("RegisterHandler email query error:", err)
 			return
 		} else {
-			ErrorPageHandler(w, r, http.StatusConflict, "Conflict Error", "This Email is already belongs to another user")
+			ErrorPageHandler(w, r, http.StatusConflict, "Conflict Error", "This email already belongs to another user")
 			return
 		}
 	}

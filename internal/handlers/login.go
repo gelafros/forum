@@ -30,15 +30,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		tmpl, err := template.ParseFiles("templates/login.html")
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
-			log.Println("Status code: 500 - Error:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler template parse error:", err)
 			return
 		}
 
 		err = tmpl.Execute(w, nil)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
-			log.Println("Status code: 500 - Error:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler template execute error:", err)
 			return
 		}
 	}
@@ -64,16 +64,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		// Delete user's existing session
 		_, err = db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
-			log.Println("Status code: 500 - Error: failed to update/delete user session")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler delete session error:", err)
 			return
 		}
 
 		// Create new session token
 		rawToken, err := uuid.NewRandom() // Create random token
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
-			log.Println("Status code: 500 - Error:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler uuid error:", err)
 			return
 		}
 		token := rawToken.String()                  // Transpose uuid token to string
@@ -83,8 +83,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		createSession := "INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)"
 		_, err = db.DB.Exec(createSession, existingUserID, token, expiresAt)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happened")
-			log.Println("session failure for logged in user error:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler insert session error:", err)
 			return
 		}
 
@@ -102,14 +102,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		// Show success Login message
 		tmpl, err := template.ParseFiles("templates/login_success.html")
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-			log.Println("Status code: 500 - Error:", err)
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LoginHandler success template parse error:", err)
 			return
 		}
 
 		err = tmpl.Execute(w, nil)
 		if err != nil {
-			log.Println("Template execution failed. Error:", err)
+			log.Println("LoginHandler success template execute error:", err)
 			return
 		}
 		log.Println("A user has been Logged in to the forum...")
@@ -127,7 +127,8 @@ func checkCredentials(w http.ResponseWriter, r *http.Request, username_Email, pa
 	}
 
 	if err != nil {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "Error in Login procedure")
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("checkCredentials query error:", err)
 		return 0, err
 	}
 
