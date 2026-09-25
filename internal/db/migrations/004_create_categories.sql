@@ -8,4 +8,5 @@ INSERT OR IGNORE INTO categories (name) VALUES
     ('General'),
     ('Tech'),
     ('Funny'),
+    ('Games'),
     ('News');
