@@ -10,6 +10,8 @@ import (
 
 // Migration runner that creates Database's tables from /db/migrations sql files
 func CreateDBTables(forumDB *sql.DB) error {
+	log.Println("Running migrations ...")
+
 	// Read files from directory
 	dirFiles, err := os.ReadDir("./internal/db/migrations")
 	if err != nil {
@@ -36,5 +38,6 @@ func CreateDBTables(forumDB *sql.DB) error {
 		}
 	}
 
+	log.Println("Migrations ran successfully")
 	return nil
 }

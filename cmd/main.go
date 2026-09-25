@@ -11,6 +11,7 @@ import (
 
 func main() {
 	// Create DB.db (The DataBase file)
+	log.Println("Starting database...")
 	db.CreateDB()
 
 	defer db.DB.Close() // Close Database for freeing system resources from sql.Open inside db.go
@@ -18,7 +19,7 @@ func main() {
 	// Create tables inside DB (Database)
 	db.CreateDBTables(db.DB)
 
-	log.Println("Forum Database connected successfully")
+	log.Println("Starting server on :8080...")
 
 	// Starting Server :8080
 	server.StartServer()

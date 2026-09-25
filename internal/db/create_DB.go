@@ -21,6 +21,7 @@ func CreateDB() {
 	if err != nil {
 		log.Fatal("Error connecting to Database:", err)
 	}
+	log.Println("Database connected successfully")
 
 	// SQL foreign-key enforcement (for checking relationships between database tables.)
 	_, err = DB.Exec("PRAGMA foreign_keys = ON")
