@@ -30,37 +30,22 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		err = db.DB.QueryRow("SELECT user_id FROM sessions WHERE sessions.token = ?", token).Scan(&existingUserID)
 
 		if err == sql.ErrNoRows {
-
-			tmpl, err := template.ParseFiles("templates/index.html")
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-				log.Println("Status code: 500 - Error:", err) // terminal print errors (technical errors report)
-				return
-			}
-
-			data := HomeData{
-				Username: "",
-				Loggedin: false,
-			}
-
-			err = tmpl.Execute(w, data)
-			if err != nil {
-				log.Println("Template execution failed. Error:", err)
-				return
-			}
+			// Session token not found — treat as already logged out, redirect home
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LogoutHandler session query error:", err)
 			return
 		}
 
 		// Delete user's existing session
 		_, err = db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
 		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", "An internal server error has happend")
-			log.Println("Template execution failed. Error: failed to update/delete user session")
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("LogoutHandler delete session error:", err)
 			return
 		}
 
