@@ -3,31 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forum Project for Zone01</title>
+    <title>Forum — Zone01 Athens</title>
     <link rel="stylesheet" href="/templates/style.css">
 </head>
 <body>
-    <h1>Forum Project for Zone01 Athens</h1>
-    <div class="auth-actions">
-      {{if .Loggedin}}
-        <span>Welcome, {{.Username}}</span><br>
 
-        <form action="/logout" method="POST">
-          <button type="submit">Logout</button>
-        </form><br><br>
-        <form action="/create_post" method="GET">
-          <button type="submit">Create Post</button>
-        </form>
-      {{else}}  
-       <form action="/login" method="GET">
-         <button type="submit">Login</button>
-        </form>
-
-       <form action="/register" method="GET">
-         <button type="submit">Register</button>
-       </form>
-      {{end}}
+<header class="site-header">
+    <div class="inner">
+        <h1>Forum — Zone01 Athens</h1>
+        <div class="auth-actions">
+          {{if .Loggedin}}
+            <span>Welcome, {{.Username}}</span>
+            <form action="/logout" method="POST">
+              <button type="submit" class="btn-outline">Logout</button>
+            </form>
+            <form action="/create_post" method="GET">
+              <button type="submit">+ New Post</button>
+            </form>
+          {{else}}
+            <form action="/login" method="GET">
+              <button type="submit">Login</button>
+            </form>
+            <form action="/register" method="GET">
+              <button type="submit">Register</button>
+            </form>
+          {{end}}
+        </div>
     </div>
-      <!-- <a href="/register">Register</a> link to an endpoint-->
+</header>
+
+<div class="container">
+    <section class="posts-list">
+        <h2>Latest Posts</h2>
+        {{if .Posts}}
+          {{range .Posts}}
+            <article class="post-card">
+                <h3><a href="/post?id={{.ID}}">{{.Title}}</a></h3>
+                <p class="post-meta">
+                    By <strong>{{.Author}}</strong> &middot; {{.CreatedAt}}
+                    {{if .Categories}}&middot; <em>{{.Categories}}</em>{{end}}
+                </p>
+            </article>
+          {{end}}
+        {{else}}
+          <p class="no-posts">No posts yet. Be the first to create one!</p>
+        {{end}}
+    </section>
+</div>
+
 </body>
 </html>
