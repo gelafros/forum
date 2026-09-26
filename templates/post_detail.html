@@ -46,8 +46,43 @@
     </article>
 
     <section class="comments">
-        <h2>Comments</h2>
-        <p>Comments are not yet available.</p>
+        <h2>Comments ({{len .Comments}})</h2>
+
+        {{if .Comments}}
+            <div class="comments-list">
+                {{range .Comments}}
+                    <div class="comment-item">
+                        <div class="comment-meta">
+                            <strong>{{.Author}}</strong> &middot; <span>{{.CreatedAt}}</span>
+                        </div>
+                        <div class="comment-content">{{.Content}}</div>
+                    </div>
+                {{end}}
+            </div>
+        {{else}}
+            <p class="no-comments">No comments yet. Be the first to comment!</p>
+        {{end}}
+
+        <div class="comment-form-section">
+            {{if .ErrorMessage}}
+                <div class="error-banner">{{.ErrorMessage}}</div>
+            {{end}}
+
+            {{if .Loggedin}}
+                <h3>Add a Comment</h3>
+                <form action="/post?id={{.Post.ID}}" method="POST" class="comment-form">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <div class="form-group">
+                        <textarea id="comment-content" name="content" rows="4" placeholder="Write your comment here..." required></textarea>
+                    </div>
+                    <button type="submit">Submit Comment</button>
+                </form>
+            {{else}}
+                <p class="login-prompt">
+                    <a href="/login">Log in</a> or <a href="/register">register</a> to leave a comment.
+                </p>
+            {{end}}
+        </div>
     </section>
 
 </div>
