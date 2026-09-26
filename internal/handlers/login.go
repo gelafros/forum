@@ -13,13 +13,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type LoginPageData struct {
+	Identifier   string
+	ErrorMessage string
+}
+
 // Login user
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var (
-		existingUserID  int
-		existingUserPsw string
-	)
-
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
@@ -36,28 +36,53 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = tmpl.Execute(w, nil)
+		err = tmpl.Execute(w, LoginPageData{})
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("LoginHandler template execute error:", err)
 			return
 		}
+		return
 	}
 
 	// Read data from page
 	if r.Method == http.MethodPost {
-
 		username_Email := r.FormValue("identifier")
 		password := r.FormValue("password")
 
 		if username_Email == "" || password == "" {
-			ErrorPageHandler(w, r, http.StatusBadRequest, "Login Failure", "Both Username/Email and Password must be completed")
+			w.WriteHeader(http.StatusBadRequest)
+			tmpl, err := template.ParseFiles("templates/login.html")
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("LoginHandler template parse error:", err)
+				return
+			}
+			tmpl.Execute(w, LoginPageData{
+				Identifier:   username_Email,
+				ErrorMessage: "Both Username/Email and Password must be completed.",
+			})
 			return
 		}
 
 		// Check credentials from DB
-		existingUserID, err := checkCredentials(w, r, username_Email, password, existingUserID, existingUserPsw)
+		existingUserID, err := checkCredentials(username_Email, password)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) || err.Error() == "invalid credentials" {
+				w.WriteHeader(http.StatusBadRequest)
+				tmpl, tErr := template.ParseFiles("templates/login.html")
+				if tErr != nil {
+					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+					log.Println("LoginHandler template parse error:", tErr)
+					return
+				}
+				tmpl.Execute(w, LoginPageData{
+					Identifier:   username_Email,
+					ErrorMessage: "Invalid username/email or password.",
+				})
+				return
+			}
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("Login failure error:", err)
 			return
 		}
@@ -117,25 +142,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Check users's credentials from DB Database
-func checkCredentials(w http.ResponseWriter, r *http.Request, username_Email, password string, existingUserID int, existingUserPsw string) (int, error) {
+// checkCredentials validates user's credentials against SQLite
+func checkCredentials(username_Email, password string) (int, error) {
+	var (
+		existingUserID  int
+		existingUserPsw string
+	)
 	checkDBCredentials := "SELECT id, password FROM users WHERE username = ? OR email = ?"
 	err := db.DB.QueryRow(checkDBCredentials, username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
-
-	if err == sql.ErrNoRows {
-		ErrorPageHandler(w, r, http.StatusBadRequest, "Login Failure", "Invalid credentials")
-		return 0, err
-	}
-
 	if err != nil {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		log.Println("checkCredentials query error:", err)
 		return 0, err
 	}
 
-	if password != existingUserPsw { // We need this also as the above "err == sql.ErrNoRows" to be sure to check passwords after a successful .Scan
-		ErrorPageHandler(w, r, http.StatusBadRequest, "Login Failure", "Invalid credentials")
-		return 0, errors.New("Password don't match")
+	if password != existingUserPsw {
+		return 0, errors.New("invalid credentials")
 	}
 	return existingUserID, nil
 }
