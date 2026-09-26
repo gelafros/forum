@@ -70,7 +70,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			p.title,
 			p.content,
 			u.username,
-			p.created_at,
+			datetime(p.created_at, 'localtime') AS created_at,
 			COALESCE(GROUP_CONCAT(c.name, ', '), '') AS categories
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
@@ -130,7 +130,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			c.id,
 			c.content,
 			u.username,
-			c.created_at
+			datetime(c.created_at, 'localtime') AS created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
@@ -142,6 +142,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer commentRows.Close()
 
+	// List of comments
 	var comments []Comment
 	for commentRows.Next() {
 		var cm Comment
@@ -161,10 +162,11 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 
 		data := PostDetailPageData{
-			Post:     post,
-			Comments: comments,
-			Loggedin: session.Loggedin,
-			Username: session.Username,
+			Post:         post,
+			Comments:     comments,
+			Loggedin:     session.Loggedin,
+			Username:     session.Username,
+			ErrorMessage: "",
 		}
 
 		tmpl, err := template.ParseFiles("templates/post_detail.html")
@@ -187,6 +189,8 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	commentContent := strings.TrimSpace(r.FormValue("content"))
+
+	// Empty comment case
 	if commentContent == "" {
 
 		data := PostDetailPageData{
