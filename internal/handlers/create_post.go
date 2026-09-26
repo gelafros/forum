@@ -37,6 +37,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
+
 		categories := LoadCategories()
 		tmpl, err := template.ParseFiles("templates/create_post.html")
 		if err != nil {
@@ -55,6 +56,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+
 		title := r.FormValue("title")
 		content := r.FormValue("content")
 		categories := r.Form["categories"]

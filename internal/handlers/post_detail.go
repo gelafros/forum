@@ -43,6 +43,7 @@ type PostDetailPageData struct {
 // POST creates a new comment under the post (authenticated users only).
 func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+
 		w.Header().Set("Allow", "GET, POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
 		log.Printf("PostDetailHandler: method %s not allowed\n", r.Method)
@@ -95,27 +96,33 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Determine logged-in state from session cookie
-	var (
-		userID   int
-		username string
-		loggedin bool
-	)
-	cookie, err := r.Cookie("session_token")
-	if err == nil {
-		token := cookie.Value
-		qErr := db.DB.QueryRow(`
-			SELECT users.id, users.username
-			FROM sessions
-			JOIN users ON sessions.user_id = users.id
-			WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&userID, &username)
-		if qErr == nil {
-			loggedin = true
-		} else if qErr != sql.ErrNoRows {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("PostDetailHandler session query error:", qErr)
-			return
-		}
+	session, err := CheckSession(r)
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		return
 	}
+
+	// var (
+	// 	userID   int
+	// 	username string
+	// 	loggedin bool
+	// )
+	// cookie, err := r.Cookie("session_token")
+	// if err == nil {
+	// 	token := cookie.Value
+	// 	qErr := db.DB.QueryRow(`
+	// 		SELECT users.id, users.username
+	// 		FROM sessions
+	// 		JOIN users ON sessions.user_id = users.id
+	// 		WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&userID, &username)
+	// 	if qErr == nil {
+	// 		loggedin = true
+	// 	} else if qErr != sql.ErrNoRows {
+	// 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+	// 		log.Println("PostDetailHandler session query error:", qErr)
+	// 		return
+	// 	}
+	// }
 
 	// Load comments for this post
 	commentRows, err := db.DB.Query(`
@@ -156,8 +163,8 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		data := PostDetailPageData{
 			Post:     post,
 			Comments: comments,
-			Loggedin: loggedin,
-			Username: username,
+			Loggedin: session.Loggedin,
+			Username: session.Username,
 		}
 
 		tmpl, err := template.ParseFiles("templates/post_detail.html")
@@ -174,7 +181,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// POST — create comment
-	if !loggedin {
+	if !session.Loggedin {
 		ErrorPageHandler(w, r, http.StatusUnauthorized, "401 Unauthorized", "You must be logged in to create a comment.")
 		return
 	}
@@ -185,8 +192,8 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		data := PostDetailPageData{
 			Post:         post,
 			Comments:     comments,
-			Loggedin:     loggedin,
-			Username:     username,
+			Loggedin:     session.Loggedin,
+			Username:     session.Username,
 			ErrorMessage: "Comment content cannot be empty.",
 		}
 
@@ -204,7 +211,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.DB.Exec("INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)", userID, postID, commentContent)
+	_, err = db.DB.Exec("INSERT INTO comments (user_id, post_id, content) VALUES (?, ?, ?)", session.UserID, postID, commentContent)
 	if err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		log.Println("PostDetailHandler insert comment error:", err)

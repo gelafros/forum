@@ -21,6 +21,7 @@ type LoginPageData struct {
 // Login user
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+
 		w.Header().Set("Allow", "GET, POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
 		log.Printf("LoginHandler: method %s not allowed\n", r.Method)
@@ -29,6 +30,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Load Login page
 	if r.Method == http.MethodGet {
+
 		tmpl, err := template.ParseFiles("templates/login.html")
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -36,17 +38,24 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = tmpl.Execute(w, LoginPageData{})
-		if err != nil {
+		if err = tmpl.Execute(w, LoginPageData{}); err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("LoginHandler template execute error:", err)
 			return
 		}
+
+		// err = tmpl.Execute(w, LoginPageData{})
+		// if err != nil {
+		// 	ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		// 	log.Println("LoginHandler template execute error:", err)
+		// 	return
+		// }
 		return
 	}
 
 	// Read data from page
 	if r.Method == http.MethodPost {
+
 		username_Email := r.FormValue("identifier")
 		password := r.FormValue("password")
 
@@ -58,10 +67,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("LoginHandler template parse error:", err)
 				return
 			}
-			tmpl.Execute(w, LoginPageData{
+
+			// tErr := tmpl.Execute(w, LoginPageData{
+			// 	Identifier:   username_Email,
+			// 	ErrorMessage: "Both Username/Email and Password must be completed.",
+			// })
+			if execErr := tmpl.Execute(w, LoginPageData{
 				Identifier:   username_Email,
 				ErrorMessage: "Both Username/Email and Password must be completed.",
-			})
+			}); execErr != nil {
+				log.Println("HomeHandler template execute error:", execErr)
+				return
+			}
 			return
 		}
 
@@ -76,6 +93,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 					log.Println("LoginHandler template parse error:", tErr)
 					return
 				}
+
 				tmpl.Execute(w, LoginPageData{
 					Identifier:   username_Email,
 					ErrorMessage: "Invalid username/email or password.",
@@ -106,8 +124,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		expiresAt := time.Now().Add(24 * time.Hour) // Set session's duration for 24 Hours
 
 		// Add token's attributes in "sessions"'s table
-		createSession := "INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)"
-		_, err = db.DB.Exec(createSession, existingUserID, token, expiresAt)
+		_, err = db.DB.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)", existingUserID, token, expiresAt)
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("LoginHandler insert session error:", err)
@@ -133,8 +150,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = tmpl.Execute(w, nil)
-		if err != nil {
+		// err = tmpl.Execute(w, nil)
+		// if err != nil {
+		// 	log.Println("LoginHandler success template execute error:", err)
+		// 	return
+		// }
+		if err = tmpl.Execute(w, nil); err != nil {
 			log.Println("LoginHandler success template execute error:", err)
 			return
 		}
@@ -142,14 +163,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// checkCredentials validates user's credentials against SQLite
+// checkCredentials validates user's credentials against SQLite and return user's ID
 func checkCredentials(username_Email, password string) (int, error) {
 	var (
 		existingUserID  int
 		existingUserPsw string
 	)
-	checkDBCredentials := "SELECT id, password FROM users WHERE username = ? OR email = ?"
-	err := db.DB.QueryRow(checkDBCredentials, username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
+
+	err := db.DB.QueryRow("SELECT id, password FROM users WHERE username = ? OR email = ?", username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
 	if err != nil {
 		return 0, err
 	}

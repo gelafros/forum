@@ -20,6 +20,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check form's methods (only GET & POST allowed)
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+
 		w.Header().Set("Allow", "GET, POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
 		log.Printf("RegisterHandler: method %s not allowed\n", r.Method)
@@ -28,6 +29,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Loading Registration form (method.Get)
 	if r.Method == http.MethodGet {
+
 		tmpl, err := template.ParseFiles("templates/registration_form.html")
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -45,6 +47,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Reading data from registration form (method.Post)
 	if r.Method == http.MethodPost {
+
 		username := r.FormValue("username")
 		email := r.FormValue("email")
 		password := r.FormValue("password")
@@ -58,6 +61,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("RegisterHandler template parse error:", err)
 				return
 			}
+
 			tmpl.Execute(w, RegisterPageData{
 				Username:     username,
 				Email:        email,
@@ -68,6 +72,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Searching DB for existing email or username
 		var existingCount int
+
 		err := db.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = ? OR username = ?", email, username).Scan(&existingCount)
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -83,6 +88,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("RegisterHandler template parse error:", err)
 				return
 			}
+
 			tmpl.Execute(w, RegisterPageData{
 				Username:     username,
 				Email:        email,
@@ -92,8 +98,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Insert new user
-		insertNewUser := `INSERT INTO users (username, email, password) VALUES (?,?,?)`
-		_, err = db.DB.Exec(insertNewUser, username, email, password)
+		_, err = db.DB.Exec("INSERT INTO users (username, email, password) VALUES (?,?,?)", username, email, password)
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("RegisterHandler insert user error:", err)
