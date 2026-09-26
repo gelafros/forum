@@ -9,6 +9,13 @@ import (
 	"forum/internal/db"
 )
 
+type CreatePostData struct {
+	Categories   []Category
+	Title        string
+	Content      string
+	ErrorMessage string
+}
+
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
@@ -23,14 +30,13 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err = db.DB.QueryRow("SELECT user_id FROM sessions WHERE token = ?", cookie.Value).Scan(&userID)
+	err = db.DB.QueryRow("SELECT user_id FROM sessions WHERE token = ? AND expires_at > CURRENT_TIMESTAMP", cookie.Value).Scan(&userID)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	if r.Method == "GET" {
-
+	if r.Method == http.MethodGet {
 		categories := LoadCategories()
 		tmpl, err := template.ParseFiles("templates/create_post.html")
 		if err != nil {
@@ -39,23 +45,35 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = tmpl.Execute(w, categories)
+		err = tmpl.Execute(w, CreatePostData{Categories: categories})
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("CreatePostHandler template execute error:", err)
 			return
 		}
+		return
 	}
 
-	if r.Method == "POST" {
-
+	if r.Method == http.MethodPost {
 		title := r.FormValue("title")
 		content := r.FormValue("content")
 		categories := r.Form["categories"]
 		var categoryIDs []int
 
 		if title == "" || content == "" || len(categories) == 0 {
-			ErrorPageHandler(w, r, http.StatusBadRequest, "All fields are required", "All fields must be completed")
+			w.WriteHeader(http.StatusBadRequest)
+			tmpl, err := template.ParseFiles("templates/create_post.html")
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("CreatePostHandler template parse error:", err)
+				return
+			}
+			tmpl.Execute(w, CreatePostData{
+				Categories:   LoadCategories(),
+				Title:        title,
+				Content:      content,
+				ErrorMessage: "All fields are required. Please provide a title, content, and select at least one category.",
+			})
 			return
 		}
 
@@ -63,7 +81,14 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			// Check that the category ID is actually a number
 			catID, err := strconv.Atoi(catStr)
 			if err != nil {
-				ErrorPageHandler(w, r, http.StatusBadRequest, "Invalid category", "Please select a valid category")
+				w.WriteHeader(http.StatusBadRequest)
+				tmpl, _ := template.ParseFiles("templates/create_post.html")
+				tmpl.Execute(w, CreatePostData{
+					Categories:   LoadCategories(),
+					Title:        title,
+					Content:      content,
+					ErrorMessage: "Please select a valid category.",
+				})
 				return
 			}
 
@@ -71,7 +96,14 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			var exists int
 			err = db.DB.QueryRow("SELECT id FROM categories WHERE id = ?", catID).Scan(&exists)
 			if err != nil {
-				ErrorPageHandler(w, r, http.StatusBadRequest, "Invalid category", "Please select a valid category")
+				w.WriteHeader(http.StatusBadRequest)
+				tmpl, _ := template.ParseFiles("templates/create_post.html")
+				tmpl.Execute(w, CreatePostData{
+					Categories:   LoadCategories(),
+					Title:        title,
+					Content:      content,
+					ErrorMessage: "Please select a valid category.",
+				})
 				return
 			}
 
