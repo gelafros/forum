@@ -35,6 +35,7 @@
         <a href="/">&larr; Back to Home</a>
     </div>
 
+    <!-- Post Section -->
     <article class="post-detail">
         <h1>{{.Post.Title}}</h1>
         <p class="post-meta">
@@ -43,8 +44,22 @@
             {{if .Post.Categories}}&middot; <em>{{.Post.Categories}}</em>{{end}}
         </p>
         <div class="post-content">{{.Post.Content}}</div>
+
+        <!-- Reaction buttons - Like/Dislike -->
+        <div class="reaction-buttons">
+          {{if .Loggedin}}  
+            <form action="/post/react" method="POST">
+              <input type="hidden" name="post_id" value="{{.Post.ID}}">
+              <button type="submit" name="reaction_type" value="like">👍</button>
+              <button type="submit" name="reaction_type" value="dislike">👎</button>
+            </form>  
+          {{end}}  
+        </div>
     </article>
 
+<!-- -------------------------------------------------------------------------------------------------------- -->
+
+    <!-- Comments Section -->
     <section class="comments">
         <h2>Comments ({{len .Comments}})</h2>
 

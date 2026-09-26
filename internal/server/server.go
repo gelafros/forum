@@ -16,6 +16,7 @@ func StartServer() {
 	http.HandleFunc("/logout", handlers.LogoutHandler)
 	http.HandleFunc("/create_post", handlers.CreatePostHandler)
 	http.HandleFunc("/post", handlers.PostDetailHandler)
+	http.HandleFunc("/post/react", handlers.PostReactHandler)
 
 	log.Println("Server is running on http://localhost:8080")
 	log.Println("Press Ctrl + C to terminate the server...")
