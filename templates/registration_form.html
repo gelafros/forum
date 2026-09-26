@@ -17,16 +17,19 @@
 <div class="container">
     <div class="form-card">
         <h1>Register</h1>
+        {{if .ErrorMessage}}
+            <div class="error-banner">{{.ErrorMessage}}</div>
+        {{end}}
         <form method="POST" action="/register">
 
             <div class="form-group">
                 <label for="username">Username <span style="color:#ef4444">*</span></label>
-                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                <input type="text" id="username" name="username" value="{{.Username}}" placeholder="Choose a username" required>
             </div>
 
             <div class="form-group">
                 <label for="email">Email <span style="color:#ef4444">*</span></label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <input type="email" id="email" name="email" value="{{.Email}}" placeholder="Enter your email" required>
             </div>
 
             <div class="form-group">
