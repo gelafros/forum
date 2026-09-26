@@ -18,5 +18,6 @@ func StartServer() {
 	http.HandleFunc("/post", handlers.PostDetailHandler)
 
 	log.Println("Server is running on http://localhost:8080")
+	log.Println("Press Ctrl + C to terminate the server...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
