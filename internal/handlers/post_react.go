@@ -83,37 +83,35 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. NOT empty post reaction case
-	if err == nil {
-
-		// Delete reaction if it is the same as before
-		if scannedReaction == formReaction {
-			_, err = db.DB.Exec("DELETE FROM post_reactions WHERE user_id = ? AND post_id = ?", session.UserID, postID)
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-				log.Println("PostReactHandler delete reaction in post error:", err)
-				return
-			}
-			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
-			return
-		} else {
-
-			// Update reaction if it is differently from before
-			_, err = db.DB.Exec("UPDATE post_reactions SET reaction_type = ? WHERE user_id = ? AND post_id = ?", formReaction, session.UserID, postID)
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-				log.Println("PostReactHandler update reaction in post error:", err)
-				return
-			}
-			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
-			return
-		}
-	}
-
-	// 3. Other errors handling
+	// 2. Other errors handling
 	if err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		log.Println("PostReactHandler query error:", err)
 		return
 	}
+
+	// 3. NOT empty post reaction case (change reaction)
+
+	// Delete reaction if it is the same as before
+	if scannedReaction == formReaction {
+		_, err = db.DB.Exec("DELETE FROM post_reactions WHERE user_id = ? AND post_id = ?", session.UserID, postID)
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("PostReactHandler delete reaction in post error:", err)
+			return
+		}
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	} else {
+		// Update reaction if it is differently from before
+		_, err = db.DB.Exec("UPDATE post_reactions SET reaction_type = ? WHERE user_id = ? AND post_id = ?", formReaction, session.UserID, postID)
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("PostReactHandler update reaction in post error:", err)
+			return
+		}
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	}
+
 }
