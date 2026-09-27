@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"forum/internal/db"
 	"log"
 	"net/http"
 	"strconv"
@@ -44,12 +46,74 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check PostID
+	var postIDScn int
+	err = db.DB.QueryRow("SELECT posts.id FROM posts WHERE posts.id = ?", postID).Scan(&postIDScn)
+
+	if err == sql.ErrNoRows {
+		ErrorPageHandler(w, r, http.StatusNotFound, "Page Not Found", "Null post")
+		return
+	}
+
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("PostReactHandler query error:", err)
+		return
+	}
 
 	// Check reaction
-	reaction := r.FormValue("reaction_type")
-	if reaction != "like" || reaction == "dislike" {
+	formReaction := r.FormValue("reaction_type")
+	if formReaction != "like" && formReaction != "dislike" {
 		ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Bad request on post reactions")
 		return
 	}
 
+	var scannedReaction string
+	// Hold the "reaction_type" from post_reactions table
+	err = db.DB.QueryRow("SELECT reaction_type FROM post_reactions pr WHERE pr.user_id = ? AND pr.post_id = ?", session.UserID, postID).Scan(&scannedReaction)
+
+	// 1. Empty post reaction case
+	if err == sql.ErrNoRows {
+		_, err = db.DB.Exec("INSERT INTO post_reactions (user_id, post_id, reaction_type) VALUES (?, ?, ?)", session.UserID, postID, formReaction)
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("PostReactHandler insert reaction in post error:", err)
+			return
+		}
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	}
+
+	// 2. NOT empty post reaction case
+	if err == nil {
+
+		// Delete reaction if it is the same as before
+		if scannedReaction == formReaction {
+			_, err = db.DB.Exec("DELETE FROM post_reactions WHERE user_id = ? AND post_id = ?", session.UserID, postID)
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("PostReactHandler delete reaction in post error:", err)
+				return
+			}
+			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+			return
+		} else {
+
+			// Update reaction if it is differently from before
+			_, err = db.DB.Exec("UPDATE post_reactions SET reaction_type = ? WHERE user_id = ? AND post_id = ?", formReaction, session.UserID, postID)
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("PostReactHandler update reaction in post error:", err)
+				return
+			}
+			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+			return
+		}
+	}
+
+	// 3. Other errors handling
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("PostReactHandler query error:", err)
+		return
+	}
 }

@@ -19,6 +19,8 @@ type PostDetail struct {
 	Author     string
 	CreatedAt  string
 	Categories string // comma-joined category names
+	Likes      int
+	Dislikes   int
 }
 
 // Comment holds comment data displayed under a post.
@@ -95,34 +97,27 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Count Likes/Dislikes
+	// Hold in "row" the SUM of "like" and "dislike" for a specific post (postID)
+	row := db.DB.QueryRow(`SELECT
+							COUNT(CASE WHEN reaction_type = 'like' THEN 1 END),
+							COUNT(CASE WHEN reaction_type = 'dislike' THEN 1 END)
+						FROM post_reactions
+						WHERE post_id = ?`, postID)
+
+	err = row.Scan(&post.Likes, &post.Dislikes) // add SUM's values in the specific fields
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("PostDetailHandler likes/dislikes counter error:", err)
+		return
+	}
+
 	// Determine logged-in state from session cookie
 	session, err := CheckSession(r)
 	if err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		return
 	}
-
-	// var (
-	// 	userID   int
-	// 	username string
-	// 	loggedin bool
-	// )
-	// cookie, err := r.Cookie("session_token")
-	// if err == nil {
-	// 	token := cookie.Value
-	// 	qErr := db.DB.QueryRow(`
-	// 		SELECT users.id, users.username
-	// 		FROM sessions
-	// 		JOIN users ON sessions.user_id = users.id
-	// 		WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&userID, &username)
-	// 	if qErr == nil {
-	// 		loggedin = true
-	// 	} else if qErr != sql.ErrNoRows {
-	// 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-	// 		log.Println("PostDetailHandler session query error:", qErr)
-	// 		return
-	// 	}
-	// }
 
 	// Load comments for this post
 	commentRows, err := db.DB.Query(`

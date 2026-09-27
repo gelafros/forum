@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
@@ -22,12 +21,6 @@ type HomeData struct {
 	Username string
 	Loggedin bool
 	Posts    []PostSummary
-}
-
-type Session struct {
-	UserID   int
-	Username string
-	Loggedin bool
 }
 
 // loadPosts fetches all posts newest-first, joined with the author username
@@ -93,24 +86,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// cookie, err := r.Cookie("session_token")
-	// if err == nil {
-	// 	// Cookie present — validate the session against the database
-	// 	token := cookie.Value
-	// 	qErr := db.DB.QueryRow(`
-	// 		SELECT users.username
-	// 		FROM sessions
-	// 		JOIN users ON sessions.user_id = users.id
-	// 		WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&username)
-	// 	if qErr == nil {
-	// 		loggedin = true
-	// 	} else if qErr != sql.ErrNoRows {
-	// 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-	// 		log.Println("HomeHandler session query error:", qErr)
-	// 		return
-	// 	}
-	// }
-
 	// Fetch posts — visible to both guests and logged-in users
 	posts, err := loadPosts()
 	if err != nil {
@@ -137,43 +112,4 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if err = tmpl.Execute(w, data); err != nil {
 		log.Println("HomeHandler template execute error:", err)
 	}
-}
-
-// Check cookie to determine logged-in state
-func CheckSession(r *http.Request) (Session, error) {
-
-	var (
-		userid   int
-		username string
-		session  Session
-	)
-
-	cookie, err := r.Cookie("session_token")
-	if err == nil {
-
-		// Cookie present — validate the session against the database
-		token := cookie.Value
-		qErr := db.DB.QueryRow(`
-			SELECT users.id, users.username
-			FROM sessions
-			JOIN users ON sessions.user_id = users.id
-			WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&userid, &username)
-		if qErr == nil {
-
-			session = Session{
-				UserID:   userid,
-				Username: username,
-				Loggedin: true,
-			}
-		} else if qErr != sql.ErrNoRows {
-
-			session = Session{
-				UserID:   0,
-				Username: "",
-				Loggedin: false,
-			}
-			return session, qErr
-		}
-	}
-	return session, nil
 }
