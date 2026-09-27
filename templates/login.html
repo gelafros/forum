@@ -10,34 +10,39 @@
 
 <header class="site-header">
     <div class="inner">
-        <h1><a href="/" style="color:#fff">Forum — Zone01 Athens</a></h1>
+        <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
     </div>
 </header>
 
 <div class="container">
     <div class="form-card">
-        <h1>Login</h1>
+        <div class="form-header">
+            <h1>Sign In</h1>
+            <p class="form-subtitle">Welcome back! Enter your credentials to access your forum account.</p>
+        </div>
+
         {{if .ErrorMessage}}
             <div class="error-banner">{{.ErrorMessage}}</div>
         {{end}}
-        <form action="/login" method="post">
 
+        <form action="/login" method="post">
             <div class="form-group">
                 <label for="identifier">Username or Email</label>
-                <input type="text" id="identifier" name="identifier" value="{{.Identifier}}" placeholder="Enter username or email" required>
+                <input type="text" id="identifier" name="identifier" value="{{.Identifier}}" placeholder="e.g. johndoe or user@email.com" required>
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter password" required>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
 
-            <button type="submit">Login</button>
+            <button type="submit" class="btn">Sign In</button>
         </form>
+
         <div class="form-links">
-            <a href="/register">Don't have an account? Register</a>
-            &nbsp;&middot;&nbsp;
-            <a href="/">Back to Home</a>
+            Don't have an account? <a href="/register">Create an account</a>
+            <br>
+            <a href="/" style="display: inline-block; margin-top: 0.5rem; color: var(--text-muted);">&larr; Back to Home</a>
         </div>
     </div>
 </div>

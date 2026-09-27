@@ -10,7 +10,7 @@
 
 <header class="site-header">
     <div class="inner">
-        <h1><a href="/" style="color:#fff">Forum — Zone01 Athens</a></h1>
+        <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
     </div>
 </header>
 
@@ -20,25 +20,30 @@
         <a href="/">&larr; Back to Home</a>
     </div>
 
-    <div class="form-card">
-        <h1>Create a Post</h1>
+    <div class="form-card" style="max-width: 620px;">
+        <div class="form-header">
+            <h1>Create a Post</h1>
+            <p class="form-subtitle">Share an idea, ask a question, or start a discussion with the community.</p>
+        </div>
+
         {{if .ErrorMessage}}
             <div class="error-banner">{{.ErrorMessage}}</div>
         {{end}}
+
         <form action="/create_post" method="POST">
 
             <div class="form-group">
-                <label for="title">Title</label>
-                <input type="text" id="title" name="title" value="{{.Title}}" placeholder="Post title" required>
+                <label for="title">Title <span style="color:#ef4444">*</span></label>
+                <input type="text" id="title" name="title" value="{{.Title}}" placeholder="What is this post about?" required>
             </div>
 
             <div class="form-group">
-                <label for="content">Content</label>
-                <textarea id="content" name="content" placeholder="What's on your mind?" required>{{.Content}}</textarea>
+                <label for="content">Content <span style="color:#ef4444">*</span></label>
+                <textarea id="content" name="content" placeholder="Share your details, questions, or perspectives..." required>{{.Content}}</textarea>
             </div>
 
             <div class="form-group">
-                <label>Categories</label>
+                <label>Categories <span style="color:#ef4444">*</span> <span class="label-hint">(Select at least one)</span></label>
                 <div class="categories-group">
                     {{range .Categories}}
                         <label>
@@ -49,7 +54,10 @@
                 </div>
             </div>
 
-            <button type="submit">Publish Post</button>
+            <div class="form-actions-row">
+                <button type="submit" class="btn">Publish Post</button>
+                <a href="/" class="btn btn-outline" style="color: var(--text-main); border-color: var(--border-hover);">Cancel</a>
+            </div>
         </form>
     </div>
 

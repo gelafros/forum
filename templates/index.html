@@ -10,7 +10,7 @@
 
 <header class="site-header">
     <div class="inner">
-        <h1><a href="/">Forum — Zone01 Athens</a></h1>
+        <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
         <div class="auth-actions">
           {{if .Loggedin}}
             <span>Welcome, {{.Username}}</span>
@@ -33,20 +33,87 @@
 </header>
 
 <div class="container">
+
+    <!-- Category & Subforum Filter Navigation -->
+    <nav class="filter-nav" aria-label="Filter posts">
+        <div class="filter-group">
+            <span class="filter-label">Categories:</span>
+            <a href="/" class="filter-pill {{if and (eq .ActiveCategory 0) (eq .ActiveFilter "")}}active{{end}}">All Posts</a>
+            {{range .Categories}}
+                <a href="/?category={{.ID}}" class="filter-pill {{if eq $.ActiveCategory .ID}}active{{end}}">{{.Name}}</a>
+            {{end}}
+        </div>
+
+        {{if .Loggedin}}
+            <div class="filter-group filter-user">
+                <span class="filter-label">My Feed:</span>
+                <a href="/?filter=created" class="filter-pill {{if eq .ActiveFilter "created"}}active{{end}}">✍️ My Posts</a>
+                <a href="/?filter=liked" class="filter-pill {{if eq .ActiveFilter "liked"}}active{{end}}">❤️ Liked Posts</a>
+            </div>
+        {{end}}
+    </nav>
+
     <section class="posts-list">
-        <h2>Latest Posts</h2>
+        <h2>
+            <span>
+                {{if eq .ActiveFilter "created"}}
+                    My Created Posts
+                {{else if eq .ActiveFilter "liked"}}
+                    Posts I Liked
+                {{else if gt .ActiveCategory 0}}
+                    Filtered by Category
+                {{else}}
+                    Latest Posts
+                {{end}}
+            </span>
+            <span class="posts-count">{{len .Posts}} posts</span>
+        </h2>
+
         {{if .Posts}}
           {{range .Posts}}
             <article class="post-card">
-                <h3><a href="/post?id={{.ID}}">{{.Title}}</a></h3>
-                <p class="post-meta">
-                    By <strong>{{.Author}}</strong> &middot; {{.CreatedAt}}
-                    {{if .Categories}}&middot; <em>{{.Categories}}</em>{{end}}
-                </p>
+                <div class="post-card-top">
+                    <div class="author-info">
+                        <div class="avatar-circle">{{.AuthorInitial}}</div>
+                        <span class="post-author">By <strong>{{.Author}}</strong></span>
+                        <span class="meta-dot">&middot;</span>
+                        <span class="post-date">{{.CreatedAt}}</span>
+                    </div>
+
+                    {{if .Categories}}
+                        <div class="post-tags">
+                            {{range .Categories}}
+                                <span class="category-tag">{{.}}</span>
+                            {{end}}
+                        </div>
+                    {{end}}
+                </div>
+
+                <h3 class="post-title"><a href="/post?id={{.ID}}">{{.Title}}</a></h3>
+                <p class="post-snippet">{{.Content}}</p>
+
+                <div class="post-card-footer">
+                    <a href="/post?id={{.ID}}" class="stat-badge">
+                        <span>💬</span> {{.CommentCount}} comments
+                    </a>
+                    <div class="stat-reactions">
+                        <span class="stat-badge">👍 {{.Likes}}</span>
+                        <span class="stat-badge">👎 {{.Dislikes}}</span>
+                    </div>
+                </div>
             </article>
           {{end}}
         {{else}}
-          <p class="no-posts">No posts yet. Be the first to create one!</p>
+          <div class="no-posts">
+              <div class="no-posts-icon">📭</div>
+              <h3>No posts found</h3>
+              <p>Be the first to share something in this category!</p>
+              {{if .Loggedin}}
+                  <a href="/create_post" class="btn" style="margin-top: 1rem;">+ Create a Post</a>
+              {{else}}
+                  <a href="/login" class="btn" style="margin-top: 1rem;">Log in to Create Post</a>
+              {{end}}
+          </div>
         {{end}}
     </section>
 </div>

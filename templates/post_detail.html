@@ -10,12 +10,15 @@
 
 <header class="site-header">
     <div class="inner">
-        <h1><a href="/" style="color:#fff">Forum — Zone01 Athens</a></h1>
+        <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
         <div class="auth-actions">
           {{if .Loggedin}}
             <span>Welcome, {{.Username}}</span>
             <form action="/logout" method="POST">
               <button type="submit" class="btn-outline">Logout</button>
+            </form>
+            <form action="/create_post" method="GET">
+              <button type="submit">+ New Post</button>
             </form>
           {{else}}
             <form action="/login" method="GET">
@@ -37,12 +40,28 @@
 
     <!-- Post Section -->
     <article class="post-detail">
+        <div class="post-card-top" style="margin-bottom: 0.75rem;">
+            <div class="author-info">
+                <div class="avatar-circle">{{.Post.AuthorInitial}}</div>
+                <span class="post-author">By <strong>{{.Post.Author}}</strong></span>
+                <span class="meta-dot">&middot;</span>
+                <span class="post-date">{{.Post.CreatedAt}}</span>
+            </div>
+
+            {{if .Post.CategoriesList}}
+                <div class="post-tags">
+                    {{range .Post.CategoriesList}}
+                        <span class="category-tag">{{.}}</span>
+                    {{end}}
+                </div>
+            {{else if .Post.Categories}}
+                <div class="post-tags">
+                    <span class="category-tag">{{.Post.Categories}}</span>
+                </div>
+            {{end}}
+        </div>
+
         <h1>{{.Post.Title}}</h1>
-        <p class="post-meta">
-            By <strong>{{.Post.Author}}</strong>
-            &middot; {{.Post.CreatedAt}}
-            {{if .Post.Categories}}&middot; <em>{{.Post.Categories}}</em>{{end}}
-        </p>
         <div class="post-content">{{.Post.Content}}</div>
 
         <!-- Reaction buttons - Like/Dislike -->
@@ -50,36 +69,44 @@
           {{if .Loggedin}}  
             <form action="/post/react" method="POST">
               <input type="hidden" name="post_id" value="{{.Post.ID}}">
-              <button type="submit" name="reaction_type" value="like" title="Like this post">👍 {{.Post.Likes}}</button>
-              <button type="submit" name="reaction_type" value="dislike" title="Dislike this post">👎 {{.Post.Dislikes}}</button>
+              <button type="submit" name="reaction_type" value="like" title="Like this post" class="btn-reaction {{if eq .Post.UserReaction "like"}}active-like{{end}}">
+                👍 {{.Post.Likes}}
+              </button>
+              <button type="submit" name="reaction_type" value="dislike" title="Dislike this post" class="btn-reaction {{if eq .Post.UserReaction "dislike"}}active-dislike{{end}}">
+                👎 {{.Post.Dislikes}}
+              </button>
             </form>  
           {{else}}  
             <!-- Show Likes/Dislikes counts (guest)-->
-            <span>👍 {{.Post.Likes}}</span>
-            <span>👎 {{.Post.Dislikes}}</span>
+            <span class="reaction-badge">👍 {{.Post.Likes}}</span>
+            <span class="reaction-badge">👎 {{.Post.Dislikes}}</span>
           {{end}}  
         </div>
     </article>
 
-<!-- -------------------------------------------------------------------------------------------------------- -->
-
     <!-- Comments Section -->
     <section class="comments">
-        <h2>Comments ({{len .Comments}})</h2>
+        <h2>
+            <span>Comments</span>
+            <span class="posts-count">({{len .Comments}})</span>
+        </h2>
 
         {{if .Comments}}
             <div class="comments-list">
                 {{range .Comments}}
                     <div class="comment-item">
                         <div class="comment-meta">
-                            <strong>{{.Author}}</strong> &middot; <span>{{.CreatedAt}}</span>
+                            <div class="avatar-circle avatar-small">{{.AuthorInitial}}</div>
+                            <strong>{{.Author}}</strong>
+                            <span class="meta-dot">&middot;</span>
+                            <span>{{.CreatedAt}}</span>
                         </div>
                         <div class="comment-content">{{.Content}}</div>
                     </div>
                 {{end}}
             </div>
         {{else}}
-            <p class="no-comments">No comments yet. Be the first to comment!</p>
+            <p class="no-comments">No comments yet. Be the first to share your thoughts!</p>
         {{end}}
 
         <div class="comment-form-section">
@@ -88,17 +115,20 @@
             {{end}}
 
             {{if .Loggedin}}
-                <h3>Add a Comment</h3>
+                <div class="comment-form-header">
+                    <h3>Leave a Comment</h3>
+                    <span class="commenting-as">Commenting as <strong>{{.Username}}</strong></span>
+                </div>
                 <form action="/post?id={{.Post.ID}}" method="POST" class="comment-form">
                     <input type="hidden" name="post_id" value="{{.Post.ID}}">
                     <div class="form-group">
-                        <textarea id="comment-content" name="content" rows="4" placeholder="Write your comment here..." required></textarea>
+                        <textarea id="comment-content" name="content" rows="4" placeholder="Write a constructive comment..." required></textarea>
                     </div>
                     <button type="submit">Submit Comment</button>
                 </form>
             {{else}}
                 <p class="login-prompt">
-                    <a href="/login">Log in</a> or <a href="/register">register</a> to leave a comment.
+                    <a href="/login">Log in</a> or <a href="/register">register</a> to participate in the discussion.
                 </p>
             {{end}}
         </div>
