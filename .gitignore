@@ -1,0 +1,6 @@
+# SQLite temp files
+*.db-shm
+*.db-wal
+
+# Go binaries
+forum
