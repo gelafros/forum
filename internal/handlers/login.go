@@ -86,7 +86,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		existingUserID, err := checkCredentials(username_Email, password)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) || err.Error() == "invalid credentials" {
-				w.WriteHeader(http.StatusBadRequest)
+				w.WriteHeader(http.StatusUnauthorized)
 				tmpl, tErr := template.ParseFiles("templates/login.html")
 				if tErr != nil {
 					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -142,24 +142,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, cookie)
 
-		// Show success Login message
-		tmpl, err := template.ParseFiles("templates/login_success.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler success template parse error:", err)
-			return
-		}
-
-		// err = tmpl.Execute(w, nil)
-		// if err != nil {
-		// 	log.Println("LoginHandler success template execute error:", err)
-		// 	return
-		// }
-		if err = tmpl.Execute(w, nil); err != nil {
-			log.Println("LoginHandler success template execute error:", err)
-			return
-		}
 		log.Println("A user has been Logged in to the forum...")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
 }
 

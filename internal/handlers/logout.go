@@ -23,7 +23,8 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
-			log.Println("Cookie problem in logging out user")
+			log.Println("Cookie problem in logging out user:", err)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 		token := cookie.Value

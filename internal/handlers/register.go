@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"forum/internal/db"
 )
@@ -48,12 +49,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Reading data from registration form (method.Post)
 	if r.Method == http.MethodPost {
 
-		username := r.FormValue("username")
-		email := r.FormValue("email")
+		username := strings.TrimSpace(r.FormValue("username"))
+		email := strings.TrimSpace(r.FormValue("email"))
 		password := r.FormValue("password")
 
 		// Check if ALL required fields are NOT empty
-		if username == "" || email == "" || password == "" {
+		if username == "" || email == "" || strings.TrimSpace(password) == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			tmpl, err := template.ParseFiles("templates/registration_form.html")
 			if err != nil {
@@ -105,20 +106,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Show Success Message
-		tmpl, err := template.ParseFiles("templates/registration_success.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("RegisterHandler success template parse error:", err)
-			return
-		}
-
-		err = tmpl.Execute(w, nil)
-		if err != nil {
-			log.Println("RegisterHandler success template execute error:", err)
-			return
-		}
 		log.Println("New User has been registered to forum...")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 }
