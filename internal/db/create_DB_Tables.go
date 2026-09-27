@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -15,7 +14,7 @@ func CreateDBTables(forumDB *sql.DB) error {
 	// Read files from directory
 	dirFiles, err := os.ReadDir("./internal/db/migrations")
 	if err != nil {
-		log.Fatal(fmt.Printf("reading db/migrations folder files: %s", err))
+		log.Fatalf("reading db/migrations folder files: %v", err)
 	}
 
 	// Collect only the .sql files
@@ -28,13 +27,13 @@ func CreateDBTables(forumDB *sql.DB) error {
 		path := "./internal/db/migrations/" + filename
 		sqlBytes, err := os.ReadFile(path)
 		if err != nil {
-			log.Fatal(fmt.Printf("sqlBytes file failed error: %s", err))
+			log.Fatalf("sqlBytes file failed error: %v", err)
 		}
 
 		// Execute migration (.Exec() needs a string to execute)
 		_, err = forumDB.Exec(string(sqlBytes)) // the content of each migration in ./db/migrations/
 		if err != nil {
-			log.Fatal(fmt.Printf("execute migration: %s with error: %s", filename, err))
+			log.Fatalf("execute migration: %s with error: %v", filename, err)
 		}
 	}
 
