@@ -50,14 +50,14 @@
           {{if .Loggedin}}  
             <form action="/post/react" method="POST">
               <input type="hidden" name="post_id" value="{{.Post.ID}}">
-              <button type="submit" name="reaction_type" value="like">👍</button>
-              <button type="submit" name="reaction_type" value="dislike">👎</button>
+              <button type="submit" name="reaction_type" value="like" title="Like this post">👍 {{.Post.Likes}}</button>
+              <button type="submit" name="reaction_type" value="dislike" title="Dislike this post">👎 {{.Post.Dislikes}}</button>
             </form>  
+          {{else}}  
+            <!-- Show Likes/Dislikes counts (guest)-->
+            <span>👍 {{.Post.Likes}}</span>
+            <span>👎 {{.Post.Dislikes}}</span>
           {{end}}  
-
-          <!-- Show Likes/Dislikes counts (guest)-->
-          <span>👍 {{.Post.Likes}}</span>
-          <span>👎 {{.Post.Dislikes}}</span>
         </div>
     </article>
 
