@@ -35,12 +35,12 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 	// Read PostID
 	formPostID := r.FormValue("post_id")
 	if formPostID == "" {
-		ErrorPageHandler(w, r, http.StatusNotFound, "Page Not Found", "Null post")
+		ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Post ID is required.")
 		return
 	}
 	postID, err := strconv.Atoi(formPostID)
 	if err != nil || postID <= 0 {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Invalid post ID.")
 		log.Println("Error converting postID:", err)
 		return
 	}
@@ -50,7 +50,7 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.DB.QueryRow("SELECT posts.id FROM posts WHERE posts.id = ?", postID).Scan(&postIDScn)
 
 	if err == sql.ErrNoRows {
-		ErrorPageHandler(w, r, http.StatusNotFound, "Page Not Found", "Null post")
+		ErrorPageHandler(w, r, http.StatusNotFound, "Page Not Found", "Post not found.")
 		return
 	}
 
