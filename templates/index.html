@@ -96,8 +96,17 @@
                         <span>💬</span> {{.CommentCount}} comments
                     </a>
                     <div class="stat-reactions">
+                      {{if $.Loggedin}}
+                        <form action="/post/react" method="POST" class="reaction-form-inline">
+                            <input type="hidden" name="post_id" value="{{.ID}}">
+                            <input type="hidden" name="redirect_url" value="{{$.CurrentPath}}">
+                            <button type="submit" name="reaction_type" value="like" title="Like this post" class="btn-reaction-sm {{if eq .UserReaction "like"}}active-like{{end}}">👍 {{.Likes}}</button>
+                            <button type="submit" name="reaction_type" value="dislike" title="Dislike this post" class="btn-reaction-sm {{if eq .UserReaction "dislike"}}active-dislike{{end}}">👎 {{.Dislikes}}</button>
+                        </form>
+                      {{else}}
                         <span class="stat-badge">👍 {{.Likes}}</span>
                         <span class="stat-badge">👎 {{.Dislikes}}</span>
+                      {{end}}
                     </div>
                 </div>
             </article>

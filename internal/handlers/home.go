@@ -22,6 +22,7 @@ type PostSummary struct {
 	Likes         int
 	Dislikes      int
 	CommentCount  int
+	UserReaction  string
 }
 
 type HomeData struct {
@@ -31,6 +32,7 @@ type HomeData struct {
 	Categories     []Category
 	ActiveCategory int
 	ActiveFilter   string
+	CurrentPath    string
 }
 
 // loadPosts fetches posts newest-first with snippet, counts, and optional category/user filters.
@@ -45,7 +47,8 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 			COALESCE(GROUP_CONCAT(DISTINCT c.name), '') AS categories,
 			(SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') AS likes,
 			(SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'dislike') AS dislikes,
-			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count
+			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
+			COALESCE((SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = ?), '') AS user_reaction
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON pc.post_id = p.id
@@ -54,6 +57,8 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 	var joins []string
 	var wheres []string
 	var args []any
+
+	args = append(args, userID)
 
 	if categoryID > 0 {
 		joins = append(joins, "JOIN post_categories fpc ON fpc.post_id = p.id AND fpc.category_id = ?")
@@ -87,7 +92,7 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 	for rows.Next() {
 		var ps PostSummary
 		var catStr string
-		if err := rows.Scan(&ps.ID, &ps.Title, &ps.Content, &ps.Author, &ps.CreatedAt, &catStr, &ps.Likes, &ps.Dislikes, &ps.CommentCount); err != nil {
+		if err := rows.Scan(&ps.ID, &ps.Title, &ps.Content, &ps.Author, &ps.CreatedAt, &catStr, &ps.Likes, &ps.Dislikes, &ps.CommentCount, &ps.UserReaction); err != nil {
 			return nil, err
 		}
 		if catStr != "" {
@@ -154,6 +159,11 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	categories := LoadCategories()
 
+	currentPath := r.URL.RequestURI()
+	if currentPath == "" || !strings.HasPrefix(currentPath, "/") || strings.HasPrefix(currentPath, "//") {
+		currentPath = "/"
+	}
+
 	data := HomeData{
 		Username:       session.Username,
 		Loggedin:       session.Loggedin,
@@ -161,6 +171,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		Categories:     categories,
 		ActiveCategory: categoryID,
 		ActiveFilter:   filterStr,
+		CurrentPath:    currentPath,
 	}
 
 	// Render page (index.html)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // Handles Like / Dislike reaction for a post
@@ -67,6 +68,12 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine safe redirect destination
+	redirectURL := r.FormValue("redirect_url")
+	if redirectURL == "" || !strings.HasPrefix(redirectURL, "/") || strings.HasPrefix(redirectURL, "//") {
+		redirectURL = "/post?id=" + strconv.Itoa(postID)
+	}
+
 	var scannedReaction string
 	// Hold the "reaction_type" from post_reactions table
 	err = db.DB.QueryRow("SELECT reaction_type FROM post_reactions pr WHERE pr.user_id = ? AND pr.post_id = ?", session.UserID, postID).Scan(&scannedReaction)
@@ -79,7 +86,7 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("PostReactHandler insert reaction in post error:", err)
 			return
 		}
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 		return
 	}
 
@@ -100,7 +107,7 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("PostReactHandler delete reaction in post error:", err)
 			return
 		}
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 		return
 	} else {
 		// Update reaction if it is differently from before
@@ -110,7 +117,7 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("PostReactHandler update reaction in post error:", err)
 			return
 		}
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 		return
 	}
 

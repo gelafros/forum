@@ -397,6 +397,64 @@ a.stat-badge:hover {
     gap: 0.35rem;
 }
 
+.reaction-form-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.btn-reaction-sm,
+.reaction-form-inline button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background-color: #f8fafc;
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    line-height: 1.4;
+    transition: all 0.15s ease;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.btn-reaction-sm:hover,
+.reaction-form-inline button:hover {
+    color: var(--text-main);
+    border-color: var(--border-hover);
+    background-color: #f1f5f9;
+    transform: scale(1.05);
+    box-shadow: none;
+}
+
+.btn-reaction-sm:active,
+.reaction-form-inline button:active {
+    transform: scale(0.96);
+}
+
+.btn-reaction-sm.active-like,
+.reaction-form-inline button.active-like {
+    background-color: #dbeafe;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    font-weight: 700;
+}
+
+.btn-reaction-sm.active-dislike,
+.reaction-form-inline button.active-dislike {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #b91c1c;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    font-weight: 700;
+}
+
 .category-tag, .post-meta em {
     font-style: normal;
     background-color: var(--primary-light);
