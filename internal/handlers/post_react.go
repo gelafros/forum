@@ -35,12 +35,12 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 	// Read PostID
 	formPostID := r.FormValue("post_id")
 	if formPostID == "" {
-		ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Post ID is required.")
+		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Post ID is required.")
 		return
 	}
 	postID, err := strconv.Atoi(formPostID)
 	if err != nil || postID <= 0 {
-		ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Invalid post ID.")
+		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Invalid post ID.")
 		log.Println("Error converting postID:", err)
 		return
 	}
