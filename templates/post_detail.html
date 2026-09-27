@@ -42,7 +42,6 @@
     <article class="post-detail">
         <div class="post-card-top" style="margin-bottom: 0.75rem;">
             <div class="author-info">
-                <div class="avatar-circle">{{.Post.AuthorInitial}}</div>
                 <span class="post-author">By <strong>{{.Post.Author}}</strong></span>
                 <span class="meta-dot">&middot;</span>
                 <span class="post-date">{{.Post.CreatedAt}}</span>
@@ -96,7 +95,6 @@
                 {{range .Comments}}
                     <div class="comment-item">
                         <div class="comment-meta">
-                            <div class="avatar-circle avatar-small">{{.AuthorInitial}}</div>
                             <strong>{{.Author}}</strong>
                             <span class="meta-dot">&middot;</span>
                             <span>{{.CreatedAt}}</span>
