@@ -13,22 +13,26 @@ import (
 
 // PostDetail holds full post data for the single-post view.
 type PostDetail struct {
-	ID         int
-	Title      string
-	Content    string
-	Author     string
-	CreatedAt  string
-	Categories string // comma-joined category names
-	Likes      int
-	Dislikes   int
+	ID             int
+	Title          string
+	Content        string
+	Author         string
+	AuthorInitial  string
+	CreatedAt      string
+	Categories     string // comma-joined category names
+	CategoriesList []string
+	Likes          int
+	Dislikes       int
+	UserReaction   string // "like", "dislike", or ""
 }
 
 // Comment holds comment data displayed under a post.
 type Comment struct {
-	ID        int
-	Content   string
-	Author    string
-	CreatedAt string
+	ID            int
+	Content       string
+	Author        string
+	AuthorInitial string
+	CreatedAt     string
 }
 
 // PostDetailPageData is the data passed to post_detail.html.
@@ -119,6 +123,25 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Query user reaction if logged in
+	if session.Loggedin {
+		_ = db.DB.QueryRow("SELECT reaction_type FROM post_reactions WHERE user_id = ? AND post_id = ?", session.UserID, postID).Scan(&post.UserReaction)
+	}
+
+	if len(post.Author) > 0 {
+		runes := []rune(post.Author)
+		post.AuthorInitial = strings.ToUpper(string(runes[0]))
+	}
+
+	if post.Categories != "" {
+		for _, cat := range strings.Split(post.Categories, ",") {
+			cat = strings.TrimSpace(cat)
+			if cat != "" {
+				post.CategoriesList = append(post.CategoriesList, cat)
+			}
+		}
+	}
+
 	// Load comments for this post
 	commentRows, err := db.DB.Query(`
 		SELECT
@@ -145,6 +168,10 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("PostDetailHandler comments scan error:", err)
 			return
+		}
+		if len(cm.Author) > 0 {
+			runes := []rune(cm.Author)
+			cm.AuthorInitial = strings.ToUpper(string(runes[0]))
 		}
 		comments = append(comments, cm)
 	}
