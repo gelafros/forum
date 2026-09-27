@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"forum/internal/db"
 )
@@ -23,15 +24,12 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("CreatePostHandler: method %s not allowed\n", r.Method)
 		return
 	}
-	cookie, err := r.Cookie("session_token")
+	session, err := CheckSession(r)
 	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		return
 	}
-
-	var userID int
-	err = db.DB.QueryRow("SELECT user_id FROM sessions WHERE token = ? AND expires_at > CURRENT_TIMESTAMP", cookie.Value).Scan(&userID)
-	if err != nil {
+	if !session.Loggedin {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -56,11 +54,16 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Invalid form data.")
+			return
+		}
 
-		title := r.FormValue("title")
-		content := r.FormValue("content")
+		title := strings.TrimSpace(r.FormValue("title"))
+		content := strings.TrimSpace(r.FormValue("content"))
 		categories := r.Form["categories"]
 		var categoryIDs []int
+		seenCategory := make(map[int]bool)
 
 		if title == "" || content == "" || len(categories) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -94,6 +97,10 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			if seenCategory[catID] {
+				continue
+			}
+
 			// Check that the category ID actually exists in the database
 			var exists int
 			err = db.DB.QueryRow("SELECT id FROM categories WHERE id = ?", catID).Scan(&exists)
@@ -109,11 +116,21 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			seenCategory[catID] = true
 			categoryIDs = append(categoryIDs, catID)
 		}
 
+		// Use database transaction for atomic post and post_categories insertion
+		tx, err := db.DB.Begin()
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("CreatePostHandler transaction begin error:", err)
+			return
+		}
+		defer tx.Rollback()
+
 		// 1. Insert the post into the posts table
-		res, err := db.DB.Exec("INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?)", userID, title, content)
+		res, err := tx.Exec("INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?)", session.UserID, title, content)
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("CreatePostHandler insert post error:", err)
@@ -130,12 +147,18 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 		// 3. Link each selected category to this post in the junction table (post_categories)
 		for _, catID := range categoryIDs {
-			_, err := db.DB.Exec("INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)", postID, catID)
+			_, err := tx.Exec("INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)", postID, catID)
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("CreatePostHandler insert post_category error:", err)
 				return
 			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("CreatePostHandler commit error:", err)
+			return
 		}
 
 		// 4. Redirect the user to the home page after post is created
