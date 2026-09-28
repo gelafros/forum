@@ -44,12 +44,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// err = tmpl.Execute(w, LoginPageData{})
-		// if err != nil {
-		// 	ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		// 	log.Println("LoginHandler template execute error:", err)
-		// 	return
-		// }
 		return
 	}
 
