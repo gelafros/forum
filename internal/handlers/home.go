@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
@@ -142,10 +143,31 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read category or user filter from query parameters
-	categoryStr := r.URL.Query().Get("category")
-	filterStr := r.URL.Query().Get("filter")
+	var categoryID int
+	if r.URL.Query().Has("category") {
+		categoryStr := r.URL.Query().Get("category")
+		catID, err := strconv.Atoi(categoryStr)
+		if err != nil || catID <= 0 {
+			ErrorPageHandler(w, r, http.StatusBadRequest, "400 Bad Request", "Invalid category ID.")
+			return
+		}
 
-	categoryID, _ := strconv.Atoi(categoryStr)
+		var exists int
+		err = db.DB.QueryRow("SELECT id FROM categories WHERE id = ?", catID).Scan(&exists)
+		if err == sql.ErrNoRows {
+			ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Category not found.")
+			return
+		}
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("HomeHandler category check error:", err)
+			return
+		}
+
+		categoryID = catID
+	}
+
+	filterStr := r.URL.Query().Get("filter")
 
 	// Guard: guests cannot filter by created or liked
 	if !session.Loggedin && (filterStr == "created" || filterStr == "liked") {
