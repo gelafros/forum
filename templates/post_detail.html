@@ -94,47 +94,26 @@
             <div class="comments-list">
                 {{range .Comments}}
                     <div class="comment-item">
-                        <div class="comment-meta">
-                            <strong>{{.Author}}</strong>
-                            <span class="meta-dot">&middot;</span>
-                            <span>{{.CreatedAt}}</span>
-                        </div>
-                        <div class="comment-content">{{.Content}}</div>
+                      <div class="comment-meta">
+                          <strong>{{.Author}}</strong>
+                          <span class="meta-dot">&middot;</span>
+                          <span>{{.CreatedAt}}</span>
+                      </div>
+                      <div class="comment-content">{{.Content}}</div>
 
-
-
-
-                         <!-- Reaction buttons - Like/Dislike -->
+                      <!-- Reaction buttons - Like/Dislike -->
                         <div class="reaction-buttons">
-                          {{if $.Loggedin}}  
-                            <form action="/comment/react" method="POST">
-                               <input type="hidden" name="comment_id" value="{{.ID}}">
-                                <!-- <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction {{if eq .Post.UserReaction "like"}}active-like{{end}}">
-                                    👍 {{.Post.Likes}}
-                                </button>
-                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this post" class="btn-reaction {{if eq .Post.UserReaction "dislike"}}active-dislike{{end}}">
-                                    👎 {{.Post.Dislikes}}
-                                </button> -->
-                                 <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction"></button>
-                                 <button type="submit" name="reaction_type" value="dislike" title="Like this comment" class="btn-reaction"></button>
-
-                            </form>  
-                          {{else}}  
-                    
-                          <!-- Show Likes/Dislikes counts (guest)-->
-                            <span class="reaction-badge">👍 {{.Post.Likes}}</span>
-                            <span class="reaction-badge">👎 {{.Post.Dislikes}}</span>
+                          {{if $.Loggedin}}  <!-- Root Data with "$" and the . which is inside .Comments -->
+                              <form action="/comment/react" method="POST">
+                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction">👍{{.Likes}}</button>
+                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this comment" class="btn-reaction">👎{{.Dislikes}}</button>
+                              </form>  
+                          {{else}}
+                            <span class="reaction-badge">👍 {{.Likes}}</span>
+                            <span class="reaction-badge">👎 {{.Dislikes}}</span>
                           {{end}}  
                         </div>
-
-
-
-
-
-
-
-
-
                     </div>
                 {{end}}
             </div>

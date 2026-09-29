@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Handles Like / Dislike reaction for a post
+// Handles Like / Dislike reaction for a Post
 func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -74,8 +74,9 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 		redirectURL = "/post?id=" + strconv.Itoa(postID)
 	}
 
+	// Reaction procedure
 	var scannedReaction string
-	// Hold the "reaction_type" from post_reactions table
+
 	err = db.DB.QueryRow("SELECT reaction_type FROM post_reactions pr WHERE pr.user_id = ? AND pr.post_id = ?", session.UserID, postID).Scan(&scannedReaction)
 
 	// 1. Empty post reaction case
