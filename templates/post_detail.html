@@ -50,7 +50,7 @@
             {{if .Post.CategoriesList}}
                 <div class="post-tags">
                     {{range .Post.CategoriesList}}
-                        <span class="category-tag">{{.}}</span>
+                        <span class="category-tag">{{.}}</span> <!-- {{.}} is the string values (name) of Post.CategoriesList []string of current element -->
                     {{end}}
                 </div>
             {{else if .Post.Categories}}
@@ -94,12 +94,26 @@
             <div class="comments-list">
                 {{range .Comments}}
                     <div class="comment-item">
-                        <div class="comment-meta">
-                            <strong>{{.Author}}</strong>
-                            <span class="meta-dot">&middot;</span>
-                            <span>{{.CreatedAt}}</span>
+                      <div class="comment-meta">
+                          <strong>{{.Author}}</strong>
+                          <span class="meta-dot">&middot;</span>
+                          <span>{{.CreatedAt}}</span>
+                      </div>
+                      <div class="comment-content">{{.Content}}</div>
+
+                      <!-- Reaction buttons - Like/Dislike -->
+                        <div class="reaction-buttons">
+                          {{if $.Loggedin}}  <!-- Root Data with "$" and the . which is inside .Comments -->
+                              <form action="/comment/react" method="POST">
+                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction {{if eq .UserReaction "like"}}active-like{{end}}">👍 {{.Likes}}</button>
+                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this comment" class="btn-reaction {{if eq .UserReaction "dislike"}}active-dislike{{end}}">👎 {{.Dislikes}}</button>
+                              </form>
+                          {{else}}
+                            <span class="reaction-badge">👍 {{.Likes}}</span>
+                            <span class="reaction-badge">👎 {{.Dislikes}}</span>
+                          {{end}}
                         </div>
-                        <div class="comment-content">{{.Content}}</div>
                     </div>
                 {{end}}
             </div>

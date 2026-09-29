@@ -65,9 +65,12 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 		args = append(args, categoryID)
 	}
 
+	// List of user_id Created posts
 	if filter == "created" && userID > 0 {
 		wheres = append(wheres, "p.user_id = ?")
 		args = append(args, userID)
+
+		// List of user_id Liked posts
 	} else if filter == "liked" && userID > 0 {
 		joins = append(joins, "JOIN post_reactions fpr ON fpr.post_id = p.id AND fpr.user_id = ? AND fpr.reaction_type = 'like'")
 		args = append(args, userID)

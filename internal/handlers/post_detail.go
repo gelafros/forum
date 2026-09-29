@@ -33,6 +33,9 @@ type Comment struct {
 	Author        string
 	AuthorInitial string
 	CreatedAt     string
+	Likes         int
+	Dislikes      int
+	UserReaction  string
 }
 
 // PostDetailPageData is the data passed to post_detail.html.
@@ -142,17 +145,23 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Load comments for this post
+	// Load comments for this post (SELECT COUNT(*) is an extra insider selection and * = for all rows)
 	commentRows, err := db.DB.Query(`
 		SELECT
 			c.id,
 			c.content,
 			u.username,
-			datetime(c.created_at, 'localtime') AS created_at
+			datetime(c.created_at, 'localtime') AS created_at,
+			(SELECT COUNT(*) FROM comment_reactions cr
+			 WHERE cr.comment_id = c.id AND cr.reaction_type = 'like') AS likes,
+			(SELECT COUNT(*) FROM comment_reactions cr
+			 WHERE cr.comment_id = c.id AND cr.reaction_type = 'dislike') AS dislikes,
+			COALESCE((SELECT reaction_type FROM comment_reactions cr
+			 WHERE cr.comment_id = c.id AND cr.user_id = ?), '') AS user_reaction
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
-		ORDER BY c.created_at ASC, c.id ASC`, postID)
+		ORDER BY c.created_at ASC, c.id ASC`, session.UserID, postID)
 	if err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		log.Println("PostDetailHandler comments query error:", err)
@@ -164,7 +173,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	var comments []Comment
 	for commentRows.Next() {
 		var cm Comment
-		if err := commentRows.Scan(&cm.ID, &cm.Content, &cm.Author, &cm.CreatedAt); err != nil {
+		if err := commentRows.Scan(&cm.ID, &cm.Content, &cm.Author, &cm.CreatedAt, &cm.Likes, &cm.Dislikes, &cm.UserReaction); err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("PostDetailHandler comments scan error:", err)
 			return
