@@ -33,6 +33,9 @@ type Comment struct {
 	Author        string
 	AuthorInitial string
 	CreatedAt     string
+	Likes         int
+	Dislikes      int
+	UserReaction  string
 }
 
 // PostDetailPageData is the data passed to post_detail.html.

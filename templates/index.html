@@ -38,9 +38,9 @@
     <nav class="filter-nav" aria-label="Filter posts">
         <div class="filter-group">
             <span class="filter-label">Categories:</span>
-            <a href="/" class="filter-pill {{if and (eq .ActiveCategory 0) (eq .ActiveFilter "")}}active{{end}}">All Posts</a>
+            <a href="/" class="filter-pill {{if and (eq .ActiveCategory 0) (eq .ActiveFilter "")}}active{{end}}">All Posts</a>  <!-- Retun to Home with "All Posts" set to active -->
             {{range .Categories}}
-                <a href="/?category={{.ID}}" class="filter-pill {{if eq $.ActiveCategory .ID}}active{{end}}">{{.Name}}</a>
+                <a href="/?category={{.ID}}" class="filter-pill {{if eq $.ActiveCategory .ID}}active{{end}}">{{.Name}}</a>  <!-- Create Category links-->
             {{end}}
         </div>
 
@@ -54,6 +54,7 @@
     </nav>
 
     <section class="posts-list">
+        <!-- Choose correct Title   -->
         <h2>
             <span>
                 {{if eq .ActiveFilter "created"}}
@@ -88,7 +89,7 @@
                     {{end}}
                 </div>
 
-                <h3 class="post-title"><a href="/post?id={{.ID}}">{{.Title}}</a></h3>
+                <h3 class="post-title"><a href="/post?id={{.ID}}">{{.Title}}</a></h3> <!-- Create link in post's title -->
                 <p class="post-snippet">{{.Content}}</p>
 
                 <div class="post-card-footer">
@@ -99,7 +100,7 @@
                       {{if $.Loggedin}}
                         <form action="/post/react" method="POST" class="reaction-form-inline">
                             <input type="hidden" name="post_id" value="{{.ID}}">
-                            <input type="hidden" name="redirect_url" value="{{$.CurrentPath}}">
+                            <input type="hidden" name="redirect_url" value="{{$.CurrentPath}}"> <!-- Send the path from with a reaction button has been pressed -->
                             <button type="submit" name="reaction_type" value="like" title="Like this post" class="btn-reaction-sm {{if eq .UserReaction "like"}}active-like{{end}}">👍 {{.Likes}}</button>
                             <button type="submit" name="reaction_type" value="dislike" title="Dislike this post" class="btn-reaction-sm {{if eq .UserReaction "dislike"}}active-dislike{{end}}">👎 {{.Dislikes}}</button>
                         </form>

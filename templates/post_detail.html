@@ -50,7 +50,7 @@
             {{if .Post.CategoriesList}}
                 <div class="post-tags">
                     {{range .Post.CategoriesList}}
-                        <span class="category-tag">{{.}}</span>
+                        <span class="category-tag">{{.}}</span> <!-- {{.}} is the string values (name) of Post.CategoriesList []string of current element -->
                     {{end}}
                 </div>
             {{else if .Post.Categories}}
@@ -100,6 +100,41 @@
                             <span>{{.CreatedAt}}</span>
                         </div>
                         <div class="comment-content">{{.Content}}</div>
+
+
+
+
+                         <!-- Reaction buttons - Like/Dislike -->
+                        <div class="reaction-buttons">
+                          {{if $.Loggedin}}  
+                            <form action="/comment/react" method="POST">
+                               <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <!-- <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction {{if eq .Post.UserReaction "like"}}active-like{{end}}">
+                                    👍 {{.Post.Likes}}
+                                </button>
+                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this post" class="btn-reaction {{if eq .Post.UserReaction "dislike"}}active-dislike{{end}}">
+                                    👎 {{.Post.Dislikes}}
+                                </button> -->
+                                 <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction"></button>
+                                 <button type="submit" name="reaction_type" value="dislike" title="Like this comment" class="btn-reaction"></button>
+
+                            </form>  
+                          {{else}}  
+                    
+                          <!-- Show Likes/Dislikes counts (guest)-->
+                            <span class="reaction-badge">👍 {{.Post.Likes}}</span>
+                            <span class="reaction-badge">👎 {{.Post.Dislikes}}</span>
+                          {{end}}  
+                        </div>
+
+
+
+
+
+
+
+
+
                     </div>
                 {{end}}
             </div>
