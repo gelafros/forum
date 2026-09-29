@@ -106,13 +106,13 @@
                           {{if $.Loggedin}}  <!-- Root Data with "$" and the . which is inside .Comments -->
                               <form action="/comment/react" method="POST">
                                 <input type="hidden" name="comment_id" value="{{.ID}}">
-                                <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction">👍{{.Likes}}</button>
-                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this comment" class="btn-reaction">👎{{.Dislikes}}</button>
-                              </form>  
+                                <button type="submit" name="reaction_type" value="like" title="Like this comment" class="btn-reaction {{if eq .UserReaction "like"}}active-like{{end}}">👍 {{.Likes}}</button>
+                                <button type="submit" name="reaction_type" value="dislike" title="Dislike this comment" class="btn-reaction {{if eq .UserReaction "dislike"}}active-dislike{{end}}">👎 {{.Dislikes}}</button>
+                              </form>
                           {{else}}
                             <span class="reaction-badge">👍 {{.Likes}}</span>
                             <span class="reaction-badge">👎 {{.Dislikes}}</span>
-                          {{end}}  
+                          {{end}}
                         </div>
                     </div>
                 {{end}}

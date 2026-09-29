@@ -15,7 +15,7 @@ func CommentReactHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
-		log.Printf("CommentRectHandler: method %s not allowed\n", r.Method)
+		log.Printf("CommentReactHandler: method %s not allowed\n", r.Method)
 		return
 	}
 
@@ -39,8 +39,8 @@ func CommentReactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	commentID, err := strconv.Atoi(formCommentID)
-	if err != nil {
-		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Comment ID is required.")
+	if err != nil || commentID <= 0 {
+		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Invalid comment ID.")
 		log.Println("Error converting commentID:", err)
 		return
 	}
