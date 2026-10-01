@@ -2,12 +2,11 @@
 #                             Stage 1: Builder 
 # -----------------------------------------------------------------------------------------------
 
-# Builder has all the required elements for selfexecuting (code, golang, dependencies, exra packages etc.)
+# Builder has all the required elements for selfexecuting (code, golang, C compiler, dependencies, exra packages etc.)
 # "FROM:" = Use a prebuilt image that already has Go installed. We are not installing anything!
 # "builder" = Docker's stage name
 FROM golang:1.26-alpine AS builder
 
-# Set the working directory inside the container
 # "WORKDIR" = 1. Sets the current working directory
 #             2. Creates /app if it doesn’t exist
 #             3. All next commands run inside /app
@@ -17,13 +16,12 @@ WORKDIR /app
 # Use go.mod for define the dependencies of our code
 COPY go.mod go.sum ./
 
-# Download go.mod
 RUN go mod download
 
 # apk is the package manager of Alpine. The "build-base" install the C compiler and the --no-cache doesn't store cache of the installed packages
 RUN apk add --no-cache build-base
 
-# Copy the rest of the source files into /app in container
+# Copying all source files into /app in container
 COPY . .
 
 # Build the binary (we can remove main.go at the end if we have ONLY the main.go in structure)
@@ -35,10 +33,10 @@ RUN go build -o forum ./cmd/main.go
 #                             Stage 2: Image creation
 # -----------------------------------------------------------------------------------------------
 
-# Define the use of latest image
+# Defining the alpine version
 FROM alpine:latest
 
-# Set working directory
+# Set working directory inside image
 WORKDIR /app
 
 # Copy the binary (forum) and all the neccessary folder the program needs from the builder stage
@@ -46,11 +44,10 @@ COPY --from=builder /app/forum .
 COPY --from=builder /app/internal/db/migrations ./internal/db/migrations
 COPY --from=builder /app/templates ./templates
 
-# Expose port 8080
+# Exposing port 8080
 # Just document (saying) that the container uses port 8080
 EXPOSE 8080
 
-# Run the binary
 # Automatically runs the binary when container starts
 CMD ["./forum"]
 
@@ -69,6 +66,14 @@ CMD ["./forum"]
 # -----------------------------------------------------------------------------------------------
 #                       Find, Terminate and Delete Images and Containers
 # -----------------------------------------------------------------------------------------------
+
+# Find Builds
+    # docker buildx history ls
+
+# Remove Build
+    # docker buildx history rm <BUILD_ID>
+    # OR
+    # docker buildx history rm --all
 
 # Find Containers
     # docker ps     | Shows running containers 

@@ -98,7 +98,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Insert new user
+		// Insert New user
 		_, err = db.DB.Exec("INSERT INTO users (username, email, password) VALUES (?,?,?)", username, email, password)
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -107,7 +107,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Println("New User has been registered to forum...")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 }
