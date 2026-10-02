@@ -1,0 +1,40 @@
+package server
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestRegisterRoutesUsesDefaultMux(t *testing.T) {
+	// Verifies that every application URL is registered on the default server mux.
+	previousMux := http.DefaultServeMux
+	http.DefaultServeMux = http.NewServeMux()
+	t.Cleanup(func() { http.DefaultServeMux = previousMux })
+	registerRoutes()
+
+	cases := []struct {
+		path        string
+		wantPattern string
+	}{
+		{"/", "/"},
+		{"/register", "/register"},
+		{"/login", "/login"},
+		{"/logout", "/logout"},
+		{"/create_post", "/create_post"},
+		{"/post", "/post"},
+		{"/post/react", "/post/react"},
+		{"/comment/react", "/comment/react"},
+		{"/templates/style.css", "/templates/style.css"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, tc.path, nil)
+			_, pattern := http.DefaultServeMux.Handler(request)
+			if pattern != tc.wantPattern {
+				t.Errorf("pattern for %q = %q, want %q", tc.path, pattern, tc.wantPattern)
+			}
+		})
+	}
+}

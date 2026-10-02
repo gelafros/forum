@@ -35,8 +35,25 @@ CGO_ENABLED=1 go run ./cmd
 Expected startup output:
 
 ```text
+Starting database...
 Database connected successfully
+Running migrations...
+Migrations ran successfully
+Server is running on http://localhost:8080
+Press Ctrl + C to terminate the server...
 ```
+
+## Run tests
+
+From the repository root, run all tests with CGO enabled for SQLite:
+
+```bash
+CGO_ENABLED=1 go test ./...
+```
+
+The test suite uses temporary SQLite databases and covers database migrations,
+HTTP route registration, authentication, posts, comments, reactions, and post
+filters. It does not use the production database at `internal/db/forum.db`.
 
 ## Inspect the SQLite database
 

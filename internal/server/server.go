@@ -7,7 +7,8 @@ import (
 	"forum/internal/handlers"
 )
 
-func StartServer() {
+// Helps "server_test" tester to determine the correct assciation of default mux routes (endpoints to handlers)
+func registerRoutes() {
 	http.Handle("/templates/style.css", http.FileServer(http.Dir(".")))
 
 	http.HandleFunc("/", handlers.HomeHandler)
@@ -18,6 +19,10 @@ func StartServer() {
 	http.HandleFunc("/post", handlers.PostDetailHandler)
 	http.HandleFunc("/post/react", handlers.PostReactHandler)
 	http.HandleFunc("/comment/react", handlers.CommentReactHandler)
+}
+
+func StartServer() {
+	registerRoutes()
 
 	log.Println("Server is running on http://localhost:8080")
 	log.Println("Press Ctrl + C to terminate the server...")

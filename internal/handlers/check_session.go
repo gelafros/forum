@@ -30,7 +30,7 @@ func CheckSession(r *http.Request) (Session, error) {
 			SELECT users.id, users.username
 			FROM sessions
 			JOIN users ON sessions.user_id = users.id
-			WHERE sessions.token = ? AND sessions.expires_at > CURRENT_TIMESTAMP`, token).Scan(&userid, &username)
+			WHERE sessions.token = ? AND datetime(sessions.expires_at) > CURRENT_TIMESTAMP`, token).Scan(&userid, &username) // datetime() converts the stored time to UTC before comparing it with SQLite's UTC timestamp.
 		if qErr == nil {
 
 			session = Session{
