@@ -62,10 +62,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// tErr := tmpl.Execute(w, LoginPageData{
-			// 	Identifier:   username_Email,
-			// 	ErrorMessage: "Both Username/Email and Password must be completed.",
-			// })
 			if execErr := tmpl.Execute(w, LoginPageData{
 				Identifier:   username_Email,
 				ErrorMessage: "Both Username/Email and Password must be completed.",
