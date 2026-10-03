@@ -132,7 +132,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, cookie)
 
-		log.Println("A user has been Logged in to the forum...")
+		// log.Println("A user has been Logged in to the forum...")
+		log.Printf("The user \"%s\" has just logged in...", username_Email)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
