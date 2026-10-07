@@ -106,7 +106,7 @@ docker image build -t forum .
 docker images
 
 # Run the container
-docker container run -d --name forum-container -p 8080:8080 forum
+docker container run --name forum-container -p 8080:8080 forum
 
 # List containers
 docker ps -a

@@ -106,7 +106,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// log.Println("New User has been registered to forum...")
 		log.Printf("The user \"%s\" just registered to forum...", username)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
