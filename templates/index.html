@@ -73,6 +73,15 @@
         {{if .Posts}}
           {{range .Posts}}
             <article class="post-card">
+
+                <!-- Make whole article clickable -->
+                <a
+                    class="post-card-link"
+                    href="/post?id={{.ID}}"
+                    aria-label="Open post: {{.Title}}" title="Open post: {{.Title}}">
+                 </a>
+
+                 <!-- Post's elements  -->
                 <div class="post-card-top">
                     <div class="author-info">
                         <span class="post-author">By <strong>{{.Author}}</strong></span>

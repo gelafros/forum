@@ -354,6 +354,20 @@ button.btn-outline:hover,
 }
 
 /* ── Posts List ─────────────────────────────────────────────── */
+.post-card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.post-title a,
+.post-card-footer > .stat-badge,
+.reaction-form-inline {
+    position: relative;
+    z-index: 2;
+}
+
 .posts-list h2 {
     font-size: 1.25rem;
     font-weight: 700;
@@ -731,7 +745,9 @@ a.stat-badge:hover {
 }
 
 .comment-item {
-    background: var(--bg-card);
+    /* background: var(--bg-card); */
+    /* background:rgba(111, 100, 68, 0.20); */
+    background:rgba(73, 73, 73, 0.30);
     border: 1px solid var(--border);
     border-left: 3px solid #1e40af;
     border-radius: var(--radius);
