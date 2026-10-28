@@ -25,7 +25,8 @@ posts and comments. No frontend frameworks or JavaScript are used.
 ## Features
 
 **Authentication**
-- Registration with username, email and password
+- Registration with username, email and password (bcrypt-hashed)
+- Social login & registration via **Google OAuth 2.0** and **GitHub OAuth 2.0** (with CSRF `state` verification and automatic account linking)
 - Duplicate username/email detection (`409 Conflict`)
 - Login with username **or** email
 - Sessions stored in SQLite with a UUID v4 token in an `HttpOnly` cookie
@@ -34,7 +35,8 @@ posts and comments. No frontend frameworks or JavaScript are used.
 - Logout deletes the session and clears the cookie
 
 **Posts & Comments**
-- Registered users can create posts and assign one or more categories
+- Registered users can create posts, assign one or more categories, and attach an **image** (**JPEG, PNG, GIF, or SVG**, up to **20 MB**)
+- Images are validated by both magic bytes and extension, stored with UUID filenames, and displayed to both registered users and guests
 - Registered users can comment on posts
 - Empty posts or comments are rejected (`400 Bad Request`)
 - Guests can view all posts and comments, but cannot create them
@@ -212,11 +214,16 @@ forum/
 | `/register` | GET, POST | Everyone | Registration form / create account |
 | `/login` | GET, POST | Everyone | Login form / start session |
 | `/logout` | POST | Logged in | End session |
+| `/auth/google/login` | GET | Everyone | Start Google OAuth 2.0 login |
+| `/auth/google/callback` | GET | Everyone | Google OAuth 2.0 callback |
+| `/auth/github/login` | GET | Everyone | Start GitHub OAuth 2.0 login |
+| `/auth/github/callback` | GET | Everyone | GitHub OAuth 2.0 callback |
 | `/create_post` | GET, POST | Logged in | Post form / create post |
 | `/post?id=<id>` | GET | Everyone | View a post and its comments |
 | `/post?id=<id>` | POST | Logged in | Add a comment |
 | `/post/react` | POST | Logged in | Like / dislike a post |
 | `/comment/react` | POST | Logged in | Like / dislike a comment |
+| `/uploads/<file>` | GET | Everyone | Serve uploaded post image |
 
 ---
 
@@ -250,6 +257,8 @@ erDiagram
 | `post_reactions` | One like/dislike per user per post |
 | `comment_reactions` | One like/dislike per user per comment |
 | `sessions` | Login sessions (one per user, with expiry) |
+| `oauth_accounts` | Linked Google and GitHub OAuth 2.0 identities |
+| `post_images` | Uploaded post image metadata (`image_path`, `mime_type`, `size_bytes`) |
 
 ---
 
@@ -317,3 +326,9 @@ MIT, see [LICENSE](LICENSE).
 | Variable | Default | Description |
 |---|---|---|
 | `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS so the session cookie gets the `Secure` flag. |
+| `GOOGLE_CLIENT_ID` | — | Google OAuth 2.0 Client ID |
+| `GOOGLE_CLIENT_SECRET` | — | Google OAuth 2.0 Client Secret |
+| `GOOGLE_REDIRECT_URL` | `http://localhost:8080/auth/google/callback` | Google OAuth 2.0 callback URL |
+| `GITHUB_CLIENT_ID` | — | GitHub OAuth 2.0 Client ID |
+| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth 2.0 Client Secret |
+| `GITHUB_REDIRECT_URL` | `http://localhost:8080/auth/github/callback` | GitHub OAuth 2.0 callback URL |
