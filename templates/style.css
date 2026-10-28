@@ -1150,3 +1150,46 @@ a.stat-badge:hover {
         font-size: 3.5rem;
     }
 }
+/* OAuth Social Login Buttons */
+.oauth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.25rem 0 1rem;
+    color: var(--text-muted, #64748b);
+    font-size: 0.85rem;
+}
+.oauth-divider::before,
+.oauth-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+.oauth-divider span {
+    padding: 0 0.75rem;
+}
+.oauth-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.btn-oauth {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #cbd5e1);
+    background: var(--card-bg, #ffffff);
+    color: var(--text-main, #0f172a);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-oauth:hover {
+    border-color: var(--primary, #3b82f6);
+    background: rgba(59, 130, 246, 0.06);
+}
