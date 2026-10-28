@@ -307,3 +307,7 @@ terminal, never sent to the browser.
 - **pkallige**
 
 Zone01 Athens
+
+## License
+
+MIT, see [LICENSE](LICENSE).
