@@ -12,3 +12,6 @@ forum
 .DS_Store
 .vscode/
 .idea/
+
+# Uploaded post images
+uploads/
