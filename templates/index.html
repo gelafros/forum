@@ -100,6 +100,9 @@
 
                 <h3 class="post-title"><a href="/post?id={{.ID}}">{{.Title}}</a></h3> <!-- Create link in post's title -->
                 <p class="post-snippet">{{.Content}}</p>
+                {{if .ImageURL}}
+                <div class="post-image-preview"><img src="{{.ImageURL}}" alt="{{.Title}}" loading="lazy"></div>
+                {{end}}
 
                 <div class="post-card-footer">
                     <a href="/post?id={{.ID}}" class="stat-badge">

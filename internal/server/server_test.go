@@ -29,6 +29,7 @@ func TestRegisterRoutesUsesDefaultMux(t *testing.T) {
 		{"/post", "/post"},
 		{"/post/react", "/post/react"},
 		{"/comment/react", "/comment/react"},
+		{"/uploads/sample.png", "/uploads/"},
 		{"/templates/style.css", "/templates/style.css"},
 	}
 

@@ -26,6 +26,7 @@ func registerRoutes() {
 	http.HandleFunc("/post", handlers.PostDetailHandler)
 	http.HandleFunc("/post/react", handlers.PostReactHandler)
 	http.HandleFunc("/comment/react", handlers.CommentReactHandler)
+	http.HandleFunc("/uploads/", handlers.UploadsHandler)
 }
 
 func StartServer() {
@@ -45,13 +46,21 @@ func StartServer() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-// maxBodyBytes caps request bodies (posts, comments, forms) at 1 MiB.
-const maxBodyBytes = 1 << 20
+// maxBodyBytes caps standard request bodies at 1 MiB, while /create_post allows up to 25 MiB
+// so the handler can inspect and return a clear error when an image exceeds the 20 MB limit.
+const (
+	maxBodyBytes   = 1 << 20
+	maxUploadBytes = 25 << 20
+)
 
 // limitBody rejects oversized request bodies to protect against abuse.
 func limitBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+		limit := int64(maxBodyBytes)
+		if r.URL.Path == "/create_post" {
+			limit = maxUploadBytes
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)
 	})
 }

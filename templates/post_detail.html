@@ -62,6 +62,9 @@
 
         <h1>{{.Post.Title}}</h1>
         <div class="post-content">{{.Post.Content}}</div>
+        {{if .Post.ImageURL}}
+        <div class="post-image"><img src="{{.Post.ImageURL}}" alt="{{.Post.Title}}"></div>
+        {{end}}
 
         <!-- Reaction buttons - Like/Dislike -->
         <div class="reaction-buttons">

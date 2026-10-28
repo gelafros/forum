@@ -54,14 +54,27 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		if err := r.ParseForm(); err != nil {
-			ErrorPageHandler(w, r, http.StatusBadRequest, "Bad Request", "Invalid form data.")
-			return
-		}
-
+		uploadedImg, imgErr := parsePostFormAndImage(r)
 		title := strings.TrimSpace(r.FormValue("title"))
 		content := strings.TrimSpace(r.FormValue("content"))
 		categories := r.Form["categories"]
+
+		if imgErr != nil {
+			tmpl, err := template.ParseFiles("templates/create_post.html")
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("CreatePostHandler template parse error:", err)
+				return
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			tmpl.Execute(w, CreatePostData{
+				Categories:   LoadCategories(),
+				Title:        title,
+				Content:      content,
+				ErrorMessage: imgErr.Error(),
+			})
+			return
+		}
 		var categoryIDs []int
 		seenCategory := make(map[int]bool)
 
@@ -161,6 +174,24 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("CreatePostHandler insert post_category error:", err)
+				return
+			}
+		}
+
+		// 4. Save optional uploaded image and record it in post_images
+		if uploadedImg != nil {
+			imageURL, err := saveUploadedImage(uploadedImg)
+			if err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("CreatePostHandler save image error:", err)
+				return
+			}
+			if _, err := tx.Exec(
+				"INSERT INTO post_images (post_id, image_path, mime_type, size_bytes) VALUES (?, ?, ?, ?)",
+				postID, imageURL, uploadedImg.MIMEType, len(uploadedImg.Data),
+			); err != nil {
+				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+				log.Println("CreatePostHandler insert post_image error:", err)
 				return
 			}
 		}

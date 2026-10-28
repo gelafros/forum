@@ -24,6 +24,7 @@ type PostSummary struct {
 	Dislikes      int
 	CommentCount  int
 	UserReaction  string
+	ImageURL      string
 }
 
 type HomeData struct {
@@ -49,8 +50,10 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 			(SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') AS likes,
 			(SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'dislike') AS dislikes,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
-			COALESCE((SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = ?), '') AS user_reaction
+			COALESCE((SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = ?), '') AS user_reaction,
+			COALESCE(pi.image_path, '') AS image_path
 		FROM posts p
+		LEFT JOIN post_images pi ON pi.post_id = p.id
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON pc.post_id = p.id
 		LEFT JOIN categories c ON c.id = pc.category_id`
@@ -96,7 +99,7 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 	for rows.Next() {
 		var ps PostSummary
 		var catStr string
-		if err := rows.Scan(&ps.ID, &ps.Title, &ps.Content, &ps.Author, &ps.CreatedAt, &catStr, &ps.Likes, &ps.Dislikes, &ps.CommentCount, &ps.UserReaction); err != nil {
+		if err := rows.Scan(&ps.ID, &ps.Title, &ps.Content, &ps.Author, &ps.CreatedAt, &catStr, &ps.Likes, &ps.Dislikes, &ps.CommentCount, &ps.UserReaction, &ps.ImageURL); err != nil {
 			return nil, err
 		}
 		if catStr != "" {

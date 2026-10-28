@@ -1193,3 +1193,21 @@ a.stat-badge:hover {
     border-color: var(--primary, #3b82f6);
     background: rgba(59, 130, 246, 0.06);
 }
+
+/* Post Uploaded Images */
+.post-image,
+.post-image-preview {
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.post-image img,
+.post-image-preview img {
+    display: block;
+    max-width: 100%;
+    max-height: 480px;
+    width: auto;
+    height: auto;
+    border-radius: 0.5rem;
+    object-fit: contain;
+}

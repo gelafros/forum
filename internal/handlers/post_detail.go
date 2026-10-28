@@ -24,6 +24,7 @@ type PostDetail struct {
 	Likes          int
 	Dislikes       int
 	UserReaction   string // "like", "dislike", or ""
+	ImageURL       string
 }
 
 // Comment holds comment data displayed under a post.
@@ -80,11 +81,13 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			p.content,
 			u.username,
 			datetime(p.created_at, 'localtime') AS created_at,
-			COALESCE(GROUP_CONCAT(c.name, ', '), '') AS categories
+			COALESCE(GROUP_CONCAT(c.name, ', '), '') AS categories,
+			COALESCE(pi.image_path, '') AS image_path
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON pc.post_id = p.id
 		LEFT JOIN categories c ON c.id = pc.category_id
+		LEFT JOIN post_images pi ON pi.post_id = p.id
 		WHERE p.id = ?
 		GROUP BY p.id`, postID).Scan(
 		&post.ID,
@@ -93,6 +96,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		&post.Author,
 		&post.CreatedAt,
 		&post.Categories,
+		&post.ImageURL,
 	)
 	if err == sql.ErrNoRows {
 		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Post not found.")
