@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"log"
 	"net/http"
@@ -98,8 +99,16 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Hash the password before storing it (never store plaintext)
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("RegisterHandler hash error:", err)
+			return
+		}
+
 		// Insert New user
-		_, err = db.DB.Exec("INSERT INTO users (username, email, password) VALUES (?,?,?)", username, email, password)
+		_, err = db.DB.Exec("INSERT INTO users (username, email, password) VALUES (?,?,?)", username, email, string(hash))
 		if err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			log.Println("RegisterHandler insert user error:", err)

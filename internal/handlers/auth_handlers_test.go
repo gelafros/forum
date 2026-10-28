@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -57,7 +58,11 @@ func setupHandlerTestDB(t *testing.T) *sql.DB {
 
 func addUser(t *testing.T, testDB *sql.DB, username, email, password string) int {
 	t.Helper()
-	result, err := testDB.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", username, email, password)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := testDB.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", username, email, string(hash))
 	if err != nil {
 		t.Fatal(err)
 	}

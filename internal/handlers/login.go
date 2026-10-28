@@ -11,6 +11,7 @@ import (
 	"forum/internal/db"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginPageData struct {
@@ -151,7 +152,7 @@ func checkCredentials(username_Email, password string) (int, error) {
 		return 0, err
 	}
 
-	if password != existingUserPsw {
+	if bcrypt.CompareHashAndPassword([]byte(existingUserPsw), []byte(password)) != nil {
 		return 0, errors.New("invalid credentials")
 	}
 	return existingUserID, nil
