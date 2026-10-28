@@ -70,7 +70,7 @@ func PostReactHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Determine safe redirect destination
 	redirectURL := r.FormValue("redirect_url")
-	if redirectURL == "" || !strings.HasPrefix(redirectURL, "/") || strings.HasPrefix(redirectURL, "//") {
+	if redirectURL == "" || !strings.HasPrefix(redirectURL, "/") || strings.HasPrefix(redirectURL, "//") || strings.Contains(redirectURL, "\\") {
 		redirectURL = "/post?id=" + strconv.Itoa(postID)
 	}
 

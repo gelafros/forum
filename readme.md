@@ -311,3 +311,9 @@ Zone01 Athens
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS so the session cookie gets the `Secure` flag. |

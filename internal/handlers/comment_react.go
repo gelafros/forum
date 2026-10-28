@@ -69,7 +69,7 @@ func CommentReactHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Determine safe redirect destination
 	redirectURL := r.FormValue("redirect_url") // this return "" because there isn't "redirect_url" in post_detail.html
-	if redirectURL == "" || !strings.HasPrefix(redirectURL, "/") || strings.HasPrefix(redirectURL, "//") {
+	if redirectURL == "" || !strings.HasPrefix(redirectURL, "/") || strings.HasPrefix(redirectURL, "//") || strings.Contains(redirectURL, "\\") {
 		redirectURL = "/post?id=" + strconv.Itoa(postIDScn)
 	}
 

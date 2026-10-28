@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"forum/internal/db"
@@ -130,6 +131,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
+			Secure:   os.Getenv("COOKIE_SECURE") == "true", // set when served over HTTPS
 		}
 		http.SetCookie(w, cookie)
 
