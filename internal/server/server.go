@@ -3,12 +3,13 @@ package server
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"forum/internal/handlers"
 )
 
-// Helps "server_test" tester to determine the correct assciation of default mux routes (endpoints to handlers)
+// Helps "server_test" tester to determine the correct association of default mux routes (endpoints to handlers)
 func registerRoutes() {
 	http.HandleFunc("/templates/style.css", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "templates/style.css")
@@ -41,17 +42,47 @@ func registerRoutes() {
 func StartServer() {
 	registerRoutes()
 
-	log.Println("Server is running on http://localhost:8080")
-	log.Println("Press Ctrl + C to terminate the server...")
+	limiter := NewRateLimiter(20, 40)
+	defer limiter.Close()
+
+	handler := SecurityHeadersMiddleware(limiter.Middleware(limitBody(http.DefaultServeMux)))
+
+	addr := ":8080"
+	if p := os.Getenv("PORT"); p != "" {
+		addr = ":" + p
+	}
 
 	srv := &http.Server{
-		Addr:              ":8080",
-		Handler:           limitBody(http.DefaultServeMux),
+		Addr:              addr,
+		Handler:           handler,
+		TLSConfig:         NewSecureTLSConfig(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+
+	if os.Getenv("ENABLE_HTTPS") == "true" {
+		certFile := os.Getenv("TLS_CERT_FILE")
+		if certFile == "" {
+			certFile = "certs/cert.pem"
+		}
+		keyFile := os.Getenv("TLS_KEY_FILE")
+		if keyFile == "" {
+			keyFile = "certs/key.pem"
+		}
+		if err := EnsureTLSCertificate(certFile, keyFile); err != nil {
+			log.Fatalf("Failed to initialize TLS certificate: %v", err)
+		}
+		_ = os.Setenv("COOKIE_SECURE", "true")
+		log.Printf("HTTPS server is running on https://localhost%s\n", addr)
+		log.Println("Press Ctrl + C to terminate the server...")
+		log.Fatal(srv.ListenAndServeTLS(certFile, keyFile))
+		return
+	}
+
+	log.Printf("Server is running on http://localhost%s\n", addr)
+	log.Println("Press Ctrl + C to terminate the server...")
 	log.Fatal(srv.ListenAndServe())
 }
 
