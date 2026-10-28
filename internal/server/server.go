@@ -10,7 +10,9 @@ import (
 
 // Helps "server_test" tester to determine the correct assciation of default mux routes (endpoints to handlers)
 func registerRoutes() {
-	http.Handle("/templates/style.css", http.FileServer(http.Dir(".")))
+	http.HandleFunc("/templates/style.css", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "templates/style.css")
+	})
 
 	http.HandleFunc("/", handlers.HomeHandler)
 	http.HandleFunc("/register", handlers.RegisterHandler)

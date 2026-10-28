@@ -66,13 +66,13 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		seenCategory := make(map[int]bool)
 
 		if title == "" || content == "" || len(categories) == 0 {
-			w.WriteHeader(http.StatusBadRequest)
 			tmpl, err := template.ParseFiles("templates/create_post.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("CreatePostHandler template parse error:", err)
 				return
 			}
+			w.WriteHeader(http.StatusBadRequest)
 			tmpl.Execute(w, CreatePostData{
 				Categories:   LoadCategories(),
 				Title:        title,
@@ -86,8 +86,13 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			// Check that the category ID is actually a number
 			catID, err := strconv.Atoi(catStr)
 			if err != nil {
+				tmpl, tErr := template.ParseFiles("templates/create_post.html")
+				if tErr != nil {
+					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+					log.Println("CreatePostHandler template parse error:", tErr)
+					return
+				}
 				w.WriteHeader(http.StatusBadRequest)
-				tmpl, _ := template.ParseFiles("templates/create_post.html")
 				tmpl.Execute(w, CreatePostData{
 					Categories:   LoadCategories(),
 					Title:        title,
@@ -105,8 +110,13 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			var exists int
 			err = db.DB.QueryRow("SELECT id FROM categories WHERE id = ?", catID).Scan(&exists)
 			if err != nil {
+				tmpl, tErr := template.ParseFiles("templates/create_post.html")
+				if tErr != nil {
+					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+					log.Println("CreatePostHandler template parse error:", tErr)
+					return
+				}
 				w.WriteHeader(http.StatusBadRequest)
-				tmpl, _ := template.ParseFiles("templates/create_post.html")
 				tmpl.Execute(w, CreatePostData{
 					Categories:   LoadCategories(),
 					Title:        title,

@@ -56,13 +56,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 
 		if username_Email == "" || password == "" {
-			w.WriteHeader(http.StatusBadRequest)
 			tmpl, err := template.ParseFiles("templates/login.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("LoginHandler template parse error:", err)
 				return
 			}
+			w.WriteHeader(http.StatusBadRequest)
 
 			if execErr := tmpl.Execute(w, LoginPageData{
 				Identifier:   username_Email,
@@ -78,13 +78,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		existingUserID, err := checkCredentials(username_Email, password)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) || err.Error() == "invalid credentials" {
-				w.WriteHeader(http.StatusUnauthorized)
 				tmpl, tErr := template.ParseFiles("templates/login.html")
 				if tErr != nil {
 					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 					log.Println("LoginHandler template parse error:", tErr)
 					return
 				}
+				w.WriteHeader(http.StatusUnauthorized)
 
 				tmpl.Execute(w, LoginPageData{
 					Identifier:   username_Email,

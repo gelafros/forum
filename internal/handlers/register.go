@@ -56,13 +56,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Check if ALL required fields are NOT empty
 		if username == "" || email == "" || strings.TrimSpace(password) == "" {
-			w.WriteHeader(http.StatusBadRequest)
 			tmpl, err := template.ParseFiles("templates/registration_form.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("RegisterHandler template parse error:", err)
 				return
 			}
+			w.WriteHeader(http.StatusBadRequest)
 
 			tmpl.Execute(w, RegisterPageData{
 				Username:     username,
@@ -83,13 +83,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if existingCount > 0 {
-			w.WriteHeader(http.StatusConflict)
 			tmpl, err := template.ParseFiles("templates/registration_form.html")
 			if err != nil {
 				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 				log.Println("RegisterHandler template parse error:", err)
 				return
 			}
+			w.WriteHeader(http.StatusConflict)
 
 			tmpl.Execute(w, RegisterPageData{
 				Username:     username,
