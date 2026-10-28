@@ -53,6 +53,18 @@ posts and comments. No frontend frameworks or JavaScript are used.
 - **My Posts** — posts created by the logged-in user
 - **Liked Posts** — posts liked by the logged-in user
 
+**Moderation & 4-Tier Role System (`forum-moderation`)**
+- **Guests**: View approved posts, comments, and like/dislike counts
+- **Users**: Create posts, comment, react, and request promotion to Moderator
+- **Moderators**: Approve pending posts, delete violating posts, and submit categorized reports (`irrelevant`, `obscene`, `illegal`, `insulting`) to Administrators
+- **Administrators**: Promote/demote users (`user` ↔ `moderator`), review and respond to moderator reports, delete any post or comment, and create/delete categories
+
+**Security & HTTPS (`forum-security`)**
+- **HTTPS / TLS 1.2+**: Automatic self-signed ECDSA P-256 certificate generation (`certs/cert.pem`, `certs/key.pem`) and explicit ECDHE AEAD cipher suites (`AES-GCM` & `ChaCha20-Poly1305`)
+- **Rate Limiting**: Concurrent per-IP token-bucket rate limiter with background cleanup goroutine and stop channel (`429 Too Many Requests`)
+- **Encryption**: Bcrypt password hashing + AES-256-GCM authenticated data encryption (`internal/security`)
+- **Hardened Sessions & Headers**: Server-side UUID v4 sessions (`HttpOnly`, `SameSite=Lax`, `Secure`), `Strict-Transport-Security`, `X-Frame-Options: DENY`, and `X-Content-Type-Options: nosniff`
+
 ---
 
 ## Tech Stack
@@ -224,6 +236,15 @@ forum/
 | `/post/react` | POST | Logged in | Like / dislike a post |
 | `/comment/react` | POST | Logged in | Like / dislike a comment |
 | `/uploads/<file>` | GET | Everyone | Serve uploaded post image |
+| `/moderation` | GET | Logged in | Role, moderation queue, report, and admin panel |
+| `/moderation/request-role` | POST | User | Request promotion to Moderator |
+| `/moderation/role` | POST | Admin | Promote or demote user roles |
+| `/moderation/post/approve` | POST | Mod / Admin | Approve a pending post |
+| `/moderation/post/delete` | POST | Mod / Admin | Delete a post |
+| `/moderation/comment/delete` | POST | Mod / Admin | Delete a comment |
+| `/moderation/report` | POST | Mod / Admin | Report a post (`irrelevant`, `obscene`, `illegal`, `insulting`) |
+| `/moderation/report/respond` | POST | Admin | Resolve or dismiss a moderator report |
+| `/moderation/categories` | POST | Admin | Create or delete forum categories |
 
 ---
 
@@ -259,6 +280,10 @@ erDiagram
 | `sessions` | Login sessions (one per user, with expiry) |
 | `oauth_accounts` | Linked Google and GitHub OAuth 2.0 identities |
 | `post_images` | Uploaded post image metadata (`image_path`, `mime_type`, `size_bytes`) |
+| `user_roles` | User access levels (`user`, `moderator`, `admin`) |
+| `post_moderation` | Post approval state (`pending`, `approved`, `rejected`) |
+| `role_requests` | User requests for Moderator promotion |
+| `moderation_reports` | Moderator reports to Admin (`irrelevant`, `obscene`, `illegal`, `insulting`) and responses |
 
 ---
 
@@ -326,6 +351,10 @@ MIT, see [LICENSE](LICENSE).
 | Variable | Default | Description |
 |---|---|---|
 | `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS so the session cookie gets the `Secure` flag. |
+| `ENABLE_HTTPS` | `false` | Set to `true` to serve over HTTPS with TLS 1.2+ cipher suites (auto-generates `certs/cert.pem` & `certs/key.pem` if missing). |
+| `TLS_CERT_FILE` | `certs/cert.pem` | Path to TLS certificate PEM file. |
+| `TLS_KEY_FILE` | `certs/key.pem` | Path to TLS private key PEM file. |
+| `MODERATION_PREAPPROVAL` | `false` | Set to `true` to require Moderator/Admin approval before new user posts become publicly visible. |
 | `GOOGLE_CLIENT_ID` | — | Google OAuth 2.0 Client ID |
 | `GOOGLE_CLIENT_SECRET` | — | Google OAuth 2.0 Client Secret |
 | `GOOGLE_REDIRECT_URL` | `http://localhost:8080/auth/google/callback` | Google OAuth 2.0 callback URL |
