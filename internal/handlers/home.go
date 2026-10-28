@@ -54,6 +54,7 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 			COALESCE(pi.image_path, '') AS image_path
 		FROM posts p
 		LEFT JOIN post_images pi ON pi.post_id = p.id
+		LEFT JOIN post_moderation pm ON pm.post_id = p.id
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON pc.post_id = p.id
 		LEFT JOIN categories c ON c.id = pc.category_id`
@@ -62,6 +63,8 @@ func loadPosts(categoryID int, filter string, userID int) ([]PostSummary, error)
 	var wheres []string
 	var args []any
 
+	args = append(args, userID)
+	wheres = append(wheres, "(COALESCE(pm.status, 'approved') = 'approved' OR p.user_id = ?)")
 	args = append(args, userID)
 
 	if categoryID > 0 {

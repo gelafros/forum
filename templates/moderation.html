@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderation & Administration — Forum</title>
+    <link rel="stylesheet" href="/templates/style.css">
+</head>
+<body>
+<header class="site-header">
+    <div class="inner">
+        <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
+        <div class="auth-actions">
+            <span>{{.Session.Username}} ({{.Session.Role}})</span>
+            <a href="/" class="btn btn-outline">Home</a>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <h1>Moderation & Role Panel</h1>
+    {{if .Message}}
+        <div class="error-banner" style="background:#dcfce7;color:#166534;border-color:#86efac;">{{.Message}}</div>
+    {{end}}
+
+    {{if eq .Session.Role "user"}}
+    <div class="form-card" style="max-width:640px;margin-bottom:2rem;">
+        <h2>Request Moderator Role</h2>
+        <p>Current role: <strong>{{.Session.Role}}</strong> {{if .MyRoleRequest}}(Request status: <strong>{{.MyRoleRequest}}</strong>){{end}}</p>
+        <form action="/moderation/request-role" method="POST">
+            <button type="submit" class="btn">Request Moderator Access from Admin</button>
+        </form>
+    </div>
+    {{end}}
+
+    {{if or (eq .Session.Role "moderator") (eq .Session.Role "admin")}}
+    <div class="form-card" style="max-width:760px;margin-bottom:2rem;">
+        <h2>Pending Posts Awaiting Approval ({{len .PendingPosts}})</h2>
+        {{range .PendingPosts}}
+            <div style="border-bottom:1px solid #e2e8f0;padding:0.75rem 0;">
+                <strong>#{{.ID}} {{.Title}}</strong> by {{.Author}} ({{.CreatedAt}})
+                <p>{{.Content}}</p>
+                <form action="/moderation/post/approve" method="POST" style="display:inline;">
+                    <input type="hidden" name="post_id" value="{{.ID}}">
+                    <button type="submit" class="btn">Approve</button>
+                </form>
+                <form action="/moderation/post/delete" method="POST" style="display:inline;">
+                    <input type="hidden" name="post_id" value="{{.ID}}">
+                    <button type="submit" class="btn btn-outline">Delete</button>
+                </form>
+            </div>
+        {{else}}
+            <p>No pending posts in the moderation queue.</p>
+        {{end}}
+    </div>
+
+    <div class="form-card" style="max-width:760px;margin-bottom:2rem;">
+        <h2>Report a Post to Administrator</h2>
+        <form action="/moderation/report" method="POST">
+            <div class="form-group">
+                <label>Post ID</label>
+                <input type="number" name="post_id" required>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="reason" required>
+                    <option value="irrelevant">Irrelevant</option>
+                    <option value="obscene">Obscene</option>
+                    <option value="illegal">Illegal</option>
+                    <option value="insulting">Insulting</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Details</label>
+                <textarea name="details" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn">Submit Report</button>
+        </form>
+    </div>
+    {{end}}
+
+    {{if eq .Session.Role "admin"}}
+    <div class="form-card" style="max-width:760px;margin-bottom:2rem;">
+        <h2>Manage Categories</h2>
+        <form action="/moderation/categories" method="POST" style="margin-bottom:1rem;">
+            <input type="hidden" name="action" value="create">
+            <input type="text" name="name" placeholder="New category name" required>
+            <button type="submit" class="btn">Add Category</button>
+        </form>
+        {{range .Categories}}
+            <form action="/moderation/categories" method="POST" style="display:inline-block;margin:0.25rem;">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="category_id" value="{{.ID}}">
+                <button type="submit" class="btn btn-outline">Delete {{.Name}}</button>
+            </form>
+        {{end}}
+    </div>
+
+    <div class="form-card" style="max-width:760px;margin-bottom:2rem;">
+        <h2>Promote / Demote Users</h2>
+        {{range .Users}}
+            <form action="/moderation/role" method="POST" style="margin-bottom:0.5rem;">
+                <input type="hidden" name="user_id" value="{{.ID}}">
+                <strong>{{.Username}}</strong> ({{.Email}}) — Role: <em>{{.Role}}</em>
+                <select name="role">
+                    <option value="user" {{if eq .Role "user"}}selected{{end}}>user</option>
+                    <option value="moderator" {{if eq .Role "moderator"}}selected{{end}}>moderator</option>
+                    <option value="admin" {{if eq .Role "admin"}}selected{{end}}>admin</option>
+                </select>
+                <button type="submit" class="btn">Update Role</button>
+            </form>
+        {{end}}
+    </div>
+
+    <div class="form-card" style="max-width:760px;margin-bottom:2rem;">
+        <h2>Moderator Reports ({{len .Reports}})</h2>
+        {{range .Reports}}
+            <div style="border-bottom:1px solid #e2e8f0;padding:0.75rem 0;">
+                <strong>Report #{{.ID}}</strong> on Post #{{.PostID}} ({{.PostTitle}}) — Reason: <strong>{{.Reason}}</strong> — Status: <em>{{.Status}}</em>
+                <p>{{.Details}}</p>
+                <form action="/moderation/report/respond" method="POST">
+                    <input type="hidden" name="report_id" value="{{.ID}}">
+                    <input type="text" name="admin_response" placeholder="Admin response..." value="{{.AdminResponse}}">
+                    <select name="status">
+                        <option value="resolved">Resolve</option>
+                        <option value="dismissed">Dismiss</option>
+                    </select>
+                    <label><input type="checkbox" name="delete_post" value="true"> Delete Post</label>
+                    <button type="submit" class="btn">Respond</button>
+                </form>
+            </div>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+</body>
+</html>

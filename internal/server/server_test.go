@@ -30,6 +30,15 @@ func TestRegisterRoutesUsesDefaultMux(t *testing.T) {
 		{"/post/react", "/post/react"},
 		{"/comment/react", "/comment/react"},
 		{"/uploads/sample.png", "/uploads/"},
+		{"/moderation", "/moderation"},
+		{"/moderation/request-role", "/moderation/request-role"},
+		{"/moderation/role", "/moderation/role"},
+		{"/moderation/post/approve", "/moderation/post/approve"},
+		{"/moderation/post/delete", "/moderation/post/delete"},
+		{"/moderation/comment/delete", "/moderation/comment/delete"},
+		{"/moderation/report", "/moderation/report"},
+		{"/moderation/report/respond", "/moderation/report/respond"},
+		{"/moderation/categories", "/moderation/categories"},
 		{"/templates/style.css", "/templates/style.css"},
 	}
 

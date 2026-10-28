@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -194,6 +195,16 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("CreatePostHandler insert post_image error:", err)
 				return
 			}
+		}
+
+		modStatus := "approved"
+		if os.Getenv("MODERATION_PREAPPROVAL") == "true" && session.Role == "user" {
+			modStatus = "pending"
+		}
+		if _, err := tx.Exec("INSERT INTO post_moderation (post_id, status) VALUES (?, ?)", postID, modStatus); err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("CreatePostHandler insert post_moderation error:", err)
+			return
 		}
 
 		if err := tx.Commit(); err != nil {

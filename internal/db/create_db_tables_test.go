@@ -32,6 +32,10 @@ func TestCreateDBTablesCreatesSchemaAndSeedCategories(t *testing.T) {
 		"sessions",
 		"oauth_accounts",
 		"post_images",
+		"user_roles",
+		"post_moderation",
+		"role_requests",
+		"moderation_reports",
 	}
 	for _, table := range tables {
 		var name string

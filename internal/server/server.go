@@ -27,6 +27,15 @@ func registerRoutes() {
 	http.HandleFunc("/post/react", handlers.PostReactHandler)
 	http.HandleFunc("/comment/react", handlers.CommentReactHandler)
 	http.HandleFunc("/uploads/", handlers.UploadsHandler)
+	http.HandleFunc("/moderation", handlers.ModerationDashboardHandler)
+	http.HandleFunc("/moderation/request-role", handlers.RequestModeratorRoleHandler)
+	http.HandleFunc("/moderation/role", handlers.ManageRoleHandler)
+	http.HandleFunc("/moderation/post/approve", handlers.ApprovePostHandler)
+	http.HandleFunc("/moderation/post/delete", handlers.DeletePostModerationHandler)
+	http.HandleFunc("/moderation/comment/delete", handlers.DeleteCommentModerationHandler)
+	http.HandleFunc("/moderation/report", handlers.ReportPostHandler)
+	http.HandleFunc("/moderation/report/respond", handlers.RespondReportHandler)
+	http.HandleFunc("/moderation/categories", handlers.ManageCategoriesHandler)
 }
 
 func StartServer() {
