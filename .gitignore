@@ -4,3 +4,11 @@
 
 # Go binaries
 forum
+*.db
+*.db-shm
+*.db-wal
+*.log
+.env
+.DS_Store
+.vscode/
+.idea/
