@@ -12,6 +12,7 @@ posts and comments. No frontend frameworks or JavaScript are used.
 - [Tech Stack](#tech-stack)
 - [Quick Start (Docker)](#quick-start-docker)
 - [Run Locally (without Docker)](#run-locally-without-docker)
+- [OAuth Setup (Google \& GitHub)](#oauth-setup-google--github)
 - [Running Tests](#running-tests)
 - [Project Structure](#project-structure)
 - [Routes](#routes)
@@ -172,6 +173,80 @@ Press Ctrl + C to terminate the server...
 ```
 
 Open **<http://localhost:8080>**.
+
+---
+
+## OAuth Setup (Google & GitHub)
+
+Google and GitHub login require **OAuth app credentials**. These identify the *forum application*
+to Google/GitHub — they are **not** a user's login. Each user still signs in with their own
+Google/GitHub account on the provider's page; the forum never sees their password.
+
+Credentials are secrets and are **never committed** to this repository (`.env` is git-ignored).
+After cloning, whoever runs the forum (e.g. the auditor) must create them once (~5 minutes).
+Without them the server prints a warning at startup and the OAuth buttons return `503`:
+
+```text
+WARNING: GitHub OAuth not configured (missing GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET) — GitHub login will be unavailable.
+```
+
+Username/email + password login works regardless.
+
+### 1. Create the `.env` file
+
+```bash
+cp .env.example .env
+```
+
+### 2. GitHub OAuth App
+
+1. Go to <https://github.com/settings/developers> → **OAuth Apps** → **New OAuth App**
+2. Fill in:
+   - **Application name:** `Forum` (anything)
+   - **Homepage URL:** `http://localhost:8080`
+   - **Authorization callback URL:** `http://localhost:8080/auth/github/callback`
+3. Click **Register application**, then **Generate a new client secret**
+4. Copy the **Client ID** and **Client secret** into `.env`:
+
+   ```env
+   GITHUB_CLIENT_ID=your_client_id
+   GITHUB_CLIENT_SECRET=your_client_secret
+   ```
+
+### 3. Google OAuth Client
+
+1. Go to <https://console.cloud.google.com/> and create (or select) a project
+2. **APIs & Services** → **OAuth consent screen** → choose **External**, fill in the app name and
+   your email, and under **Test users** add every Google account you will log in with
+   (while the app is in *Testing* mode, other accounts get "access denied")
+3. **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID**
+   - **Application type:** Web application
+   - **Authorized redirect URIs:** `http://localhost:8080/auth/google/callback`
+4. Copy the **Client ID** and **Client secret** into `.env`:
+
+   ```env
+   GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   ```
+
+### 4. Start (or restart) the forum
+
+```bash
+./docker.sh            # Docker: passes .env into the container
+# or
+CGO_ENABLED=1 go run ./cmd   # Local: .env is loaded automatically at startup
+```
+
+The startup warnings disappear once both providers are configured.
+
+### Notes
+
+- The callback URLs use `localhost`, so the same credentials work on **any machine** as long as
+  the forum runs on port `8080` and the browser runs on that same machine.
+- If you change the port or enable HTTPS (`ENABLE_HTTPS=true`), update the callback URLs both in the
+  provider settings and in `.env` (`GITHUB_REDIRECT_URL`, `GOOGLE_REDIRECT_URL`) — e.g.
+  `https://localhost:8080/auth/github/callback`.
+- Variables already exported in your shell take precedence over values in `.env`.
 
 ---
 
