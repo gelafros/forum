@@ -502,39 +502,11 @@ func completeOAuthLogin(w http.ResponseWriter, r *http.Request, info oauthUserIn
 		return
 	}
 
-	if _, err := db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", userID); err != nil {
-		log.Println("completeOAuthLogin delete old session error:", err)
+	if err := issueUserSession(w, userID); err != nil {
+		log.Println("completeOAuthLogin session error:", err)
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		return
 	}
-
-	rawToken, err := uuid.NewRandom()
-	if err != nil {
-		log.Println("completeOAuthLogin uuid error:", err)
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		return
-	}
-	token := rawToken.String()
-	expiresAt := time.Now().Add(24 * time.Hour)
-
-	if _, err := db.DB.Exec(
-		"INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
-		userID, token, expiresAt,
-	); err != nil {
-		log.Println("completeOAuthLogin insert session error:", err)
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    token,
-		Expires:  expiresAt,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   os.Getenv("COOKIE_SECURE") == "true",
-	})
 
 	log.Printf("The user %q has logged in via %s OAuth...", username, info.Provider)
 	http.Redirect(w, r, "/", http.StatusSeeOther)

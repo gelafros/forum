@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -205,16 +204,5 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		CurrentPath:    currentPath,
 	}
 
-	// Render page (index.html)
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		log.Println("HomeHandler template parse error:", err)
-		return
-	}
-
-	// Seed the page with data
-	if err = tmpl.Execute(w, data); err != nil {
-		log.Println("HomeHandler template execute error:", err)
-	}
+	renderTemplate(w, r, http.StatusOK, "templates/index.html", data)
 }

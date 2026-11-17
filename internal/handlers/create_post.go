@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -36,21 +35,9 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-
-		categories := LoadCategories()
-		tmpl, err := template.ParseFiles("templates/create_post.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("CreatePostHandler template parse error:", err)
-			return
-		}
-
-		err = tmpl.Execute(w, CreatePostData{Categories: categories})
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("CreatePostHandler template execute error:", err)
-			return
-		}
+		renderTemplate(w, r, http.StatusOK, "templates/create_post.html", CreatePostData{
+			Categories: LoadCategories(),
+		})
 		return
 	}
 
@@ -61,14 +48,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		categories := r.Form["categories"]
 
 		if imgErr != nil {
-			tmpl, err := template.ParseFiles("templates/create_post.html")
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-				log.Println("CreatePostHandler template parse error:", err)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			tmpl.Execute(w, CreatePostData{
+			renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
 				Categories:   LoadCategories(),
 				Title:        title,
 				Content:      content,
@@ -76,18 +56,8 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		var categoryIDs []int
-		seenCategory := make(map[int]bool)
-
 		if title == "" || content == "" || len(categories) == 0 {
-			tmpl, err := template.ParseFiles("templates/create_post.html")
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-				log.Println("CreatePostHandler template parse error:", err)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			tmpl.Execute(w, CreatePostData{
+			renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
 				Categories:   LoadCategories(),
 				Title:        title,
 				Content:      content,
@@ -96,50 +66,28 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		allCategories := LoadCategories()
+		validCategories := make(map[int]bool, len(allCategories))
+		for _, c := range allCategories {
+			validCategories[c.ID] = true
+		}
+
+		var categoryIDs []int
+		seenCategory := make(map[int]bool, len(categories))
 		for _, catStr := range categories {
-			// Check that the category ID is actually a number
 			catID, err := strconv.Atoi(catStr)
-			if err != nil {
-				tmpl, tErr := template.ParseFiles("templates/create_post.html")
-				if tErr != nil {
-					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-					log.Println("CreatePostHandler template parse error:", tErr)
-					return
-				}
-				w.WriteHeader(http.StatusBadRequest)
-				tmpl.Execute(w, CreatePostData{
-					Categories:   LoadCategories(),
+			if err != nil || !validCategories[catID] {
+				renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
+					Categories:   allCategories,
 					Title:        title,
 					Content:      content,
 					ErrorMessage: "Please select a valid category.",
 				})
 				return
 			}
-
 			if seenCategory[catID] {
 				continue
 			}
-
-			// Check that the category ID actually exists in the database
-			var exists int
-			err = db.DB.QueryRow("SELECT id FROM categories WHERE id = ?", catID).Scan(&exists)
-			if err != nil {
-				tmpl, tErr := template.ParseFiles("templates/create_post.html")
-				if tErr != nil {
-					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-					log.Println("CreatePostHandler template parse error:", tErr)
-					return
-				}
-				w.WriteHeader(http.StatusBadRequest)
-				tmpl.Execute(w, CreatePostData{
-					Categories:   LoadCategories(),
-					Title:        title,
-					Content:      content,
-					ErrorMessage: "Please select a valid category.",
-				})
-				return
-			}
-
 			seenCategory[catID] = true
 			categoryIDs = append(categoryIDs, catID)
 		}

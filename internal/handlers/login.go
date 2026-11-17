@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"errors"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -23,133 +22,97 @@ type LoginPageData struct {
 // Login user
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
-
 		w.Header().Set("Allow", "GET, POST")
 		ErrorPageHandler(w, r, http.StatusMethodNotAllowed, errMethodNotAllowedTitle, errMethodNotAllowedMessage)
 		log.Printf("LoginHandler: method %s not allowed\n", r.Method)
 		return
 	}
 
-	// Load Login page
 	if r.Method == http.MethodGet {
-
-		tmpl, err := template.ParseFiles("templates/login.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler template parse error:", err)
-			return
-		}
-
-		if err = tmpl.Execute(w, LoginPageData{}); err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler template execute error:", err)
-			return
-		}
-
+		renderTemplate(w, r, http.StatusOK, "templates/login.html", LoginPageData{})
 		return
 	}
 
-	// Read data from page
-	if r.Method == http.MethodPost {
+	usernameEmail := r.FormValue("identifier")
+	password := r.FormValue("password")
 
-		username_Email := r.FormValue("identifier")
-		password := r.FormValue("password")
-
-		if username_Email == "" || password == "" {
-			tmpl, err := template.ParseFiles("templates/login.html")
-			if err != nil {
-				ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-				log.Println("LoginHandler template parse error:", err)
-				return
-			}
-			w.WriteHeader(http.StatusBadRequest)
-
-			if execErr := tmpl.Execute(w, LoginPageData{
-				Identifier:   username_Email,
-				ErrorMessage: "Both Username/Email and Password must be completed.",
-			}); execErr != nil {
-				log.Println("HomeHandler template execute error:", execErr)
-				return
-			}
-			return
-		}
-
-		// Check credentials from DB
-		existingUserID, err := checkCredentials(username_Email, password)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) || err.Error() == "invalid credentials" {
-				tmpl, tErr := template.ParseFiles("templates/login.html")
-				if tErr != nil {
-					ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-					log.Println("LoginHandler template parse error:", tErr)
-					return
-				}
-				w.WriteHeader(http.StatusUnauthorized)
-
-				tmpl.Execute(w, LoginPageData{
-					Identifier:   username_Email,
-					ErrorMessage: "Invalid username/email or password.",
-				})
-				return
-			}
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("Login failure error:", err)
-			return
-		}
-
-		// Delete user's existing session
-		_, err = db.DB.Exec("DELETE FROM sessions WHERE user_id = ?", existingUserID)
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler delete session error:", err)
-			return
-		}
-
-		// Create new session token
-		rawToken, err := uuid.NewRandom() // Create random token
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler uuid error:", err)
-			return
-		}
-		token := rawToken.String()                  // Transpose uuid token to string
-		expiresAt := time.Now().Add(24 * time.Hour) // Set session's duration for 24 Hours
-
-		// Add token's attributes in "sessions"'s table
-		_, err = db.DB.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)", existingUserID, token, expiresAt)
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("LoginHandler insert session error:", err)
-			return
-		}
-
-		// Create cookie for browser
-		cookie := &http.Cookie{
-			Name:     "session_token",
-			Value:    token,
-			Expires:  expiresAt,
-			Path:     "/",
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-			Secure:   os.Getenv("COOKIE_SECURE") == "true", // set when served over HTTPS
-		}
-		http.SetCookie(w, cookie)
-
-		// log.Println("A user has been Logged in to the forum...")
-		log.Printf("The user \"%s\" has just logged in...", username_Email)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	if usernameEmail == "" || password == "" {
+		renderTemplate(w, r, http.StatusBadRequest, "templates/login.html", LoginPageData{
+			Identifier:   usernameEmail,
+			ErrorMessage: "Both Username/Email and Password must be completed.",
+		})
 		return
 	}
+
+	existingUserID, err := checkCredentials(usernameEmail, password)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) || err.Error() == "invalid credentials" {
+			renderTemplate(w, r, http.StatusUnauthorized, "templates/login.html", LoginPageData{
+				Identifier:   usernameEmail,
+				ErrorMessage: "Invalid username/email or password.",
+			})
+			return
+		}
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("Login failure error:", err)
+		return
+	}
+
+	if err := issueUserSession(w, existingUserID); err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("LoginHandler session error:", err)
+		return
+	}
+
+	log.Printf("The user %q has just logged in...", usernameEmail)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// checkCredentials validates user's credentials against SQLite and return user's ID
-func checkCredentials(username_Email, password string) (int, error) {
+// issueUserSession replaces any existing session for userID with a new 24h UUID session token and sets the HttpOnly cookie.
+func issueUserSession(w http.ResponseWriter, userID int) error {
+	rawToken, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+	token := rawToken.String()
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec("DELETE FROM sessions WHERE user_id = ?", userID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)", userID, token, expiresAt); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    token,
+		Expires:  expiresAt,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   os.Getenv("COOKIE_SECURE") == "true",
+	})
+	return nil
+}
+
+// checkCredentials validates user's credentials against SQLite and returns user's ID.
+func checkCredentials(usernameEmail, password string) (int, error) {
 	var (
 		existingUserID  int
 		existingUserPsw string
 	)
 
-	err := db.DB.QueryRow("SELECT id, password FROM users WHERE username = ? OR email = ?", username_Email, username_Email).Scan(&existingUserID, &existingUserPsw)
+	err := db.DB.QueryRow("SELECT id, password FROM users WHERE username = ? OR email = ?", usernameEmail, usernameEmail).Scan(&existingUserID, &existingUserPsw)
 	if err != nil {
 		return 0, err
 	}
