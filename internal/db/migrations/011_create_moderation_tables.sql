@@ -25,13 +25,13 @@ CREATE TABLE IF NOT EXISTS role_requests (
 
 CREATE TABLE IF NOT EXISTS moderation_reports (
     id INTEGER PRIMARY KEY,
-    post_id INTEGER NOT NULL,
+    post_id INTEGER,
     reporter_id INTEGER NOT NULL,
     reason TEXT NOT NULL CHECK (reason IN ('irrelevant', 'obscene', 'illegal', 'insulting')),
     details TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'dismissed')) DEFAULT 'open',
     admin_response TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL,
     FOREIGN KEY (reporter_id) REFERENCES users(id)
 );

@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"database/sql"
-	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -64,8 +65,14 @@ type ModerationDashboardData struct {
 	Message       string
 }
 
-// DeletePostByID removes a post and all dependent rows inside a transaction.
+// DeletePostByID removes a post and all dependent rows inside a transaction,
+// then deletes the post's uploaded image file (if any) from disk.
 func DeletePostByID(postID int) error {
+	var imagePath string
+	if err := db.DB.QueryRow("SELECT image_path FROM post_images WHERE post_id = ?", postID).Scan(&imagePath); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
 	tx, err := db.DB.Begin()
 	if err != nil {
 		return err
@@ -79,7 +86,7 @@ func DeletePostByID(postID int) error {
 		"DELETE FROM post_categories WHERE post_id = ?",
 		"DELETE FROM post_images WHERE post_id = ?",
 		"DELETE FROM post_moderation WHERE post_id = ?",
-		"DELETE FROM moderation_reports WHERE post_id = ?",
+		"UPDATE moderation_reports SET post_id = NULL WHERE post_id = ?",
 		"DELETE FROM posts WHERE id = ?",
 	}
 	for _, q := range queries {
@@ -87,7 +94,17 @@ func DeletePostByID(postID int) error {
 			return err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	if imagePath != "" {
+		diskPath := filepath.Join("uploads", filepath.Base(imagePath))
+		if err := os.Remove(diskPath); err != nil && !os.IsNotExist(err) {
+			log.Println("DeletePostByID remove image error:", err)
+		}
+	}
+	return nil
 }
 
 // ModerationDashboardHandler renders GET /moderation for users, moderators, and administrators.
@@ -135,7 +152,7 @@ func ModerationDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		repRows, err := db.DB.Query(`
-			SELECT mr.id, mr.post_id, COALESCE(p.title, '[Deleted Post]'), u.username, mr.reason, mr.details, mr.status, mr.admin_response, datetime(mr.created_at, 'localtime')
+			SELECT mr.id, COALESCE(mr.post_id, 0), COALESCE(p.title, '[Deleted Post]'), u.username, mr.reason, mr.details, mr.status, mr.admin_response, datetime(mr.created_at, 'localtime')
 			FROM moderation_reports mr
 			JOIN users u ON u.id = mr.reporter_id
 			LEFT JOIN posts p ON p.id = mr.post_id
@@ -184,14 +201,7 @@ func ModerationDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tmpl, err := template.ParseFiles("templates/moderation.html")
-	if err != nil {
-		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-		log.Println("ModerationDashboardHandler template parse error:", err)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, data)
+	renderTemplate(w, r, http.StatusOK, "templates/moderation.html", data)
 }
 
 // RequestModeratorRoleHandler allows a registered user to request promotion to moderator from an admin.
@@ -339,8 +349,23 @@ func DeleteCommentModerationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = db.DB.Exec("DELETE FROM comment_reactions WHERE comment_id = ?", commentID)
-	if _, err := db.DB.Exec("DELETE FROM comments WHERE id = ?", commentID); err != nil {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		return
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec("DELETE FROM comment_reactions WHERE comment_id = ?", commentID); err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("DeleteCommentModerationHandler delete reactions error:", err)
+		return
+	}
+	if _, err := tx.Exec("DELETE FROM comments WHERE id = ?", commentID); err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("DeleteCommentModerationHandler delete comment error:", err)
+		return
+	}
+	if err := tx.Commit(); err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 		return
 	}
@@ -409,7 +434,7 @@ func RespondReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var postID int
-	if err := db.DB.QueryRow("SELECT post_id FROM moderation_reports WHERE id = ?", reportID).Scan(&postID); err != nil {
+	if err := db.DB.QueryRow("SELECT COALESCE(post_id, 0) FROM moderation_reports WHERE id = ?", reportID).Scan(&postID); err != nil {
 		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Report not found.")
 		return
 	}
@@ -423,7 +448,11 @@ func RespondReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if deletePost && postID > 0 {
-		_ = DeletePostByID(postID)
+		if err := DeletePostByID(postID); err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("RespondReportHandler delete post error:", err)
+			return
+		}
 	}
 	http.Redirect(w, r, "/moderation?msg=Report+updated", http.StatusSeeOther)
 }
@@ -459,8 +488,23 @@ func ManageCategoriesHandler(w http.ResponseWriter, r *http.Request) {
 			ErrorPageHandler(w, r, http.StatusBadRequest, "400 Bad Request", "Invalid category ID.")
 			return
 		}
-		_, _ = db.DB.Exec("DELETE FROM post_categories WHERE category_id = ?", catID)
-		if _, err := db.DB.Exec("DELETE FROM categories WHERE id = ?", catID); err != nil {
+		tx, err := db.DB.Begin()
+		if err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			return
+		}
+		defer tx.Rollback()
+		if _, err := tx.Exec("DELETE FROM post_categories WHERE category_id = ?", catID); err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("ManageCategoriesHandler delete post_categories error:", err)
+			return
+		}
+		if _, err := tx.Exec("DELETE FROM categories WHERE id = ?", catID); err != nil {
+			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+			log.Println("ManageCategoriesHandler delete category error:", err)
+			return
+		}
+		if err := tx.Commit(); err != nil {
 			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
 			return
 		}

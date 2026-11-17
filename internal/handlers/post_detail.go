@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -130,6 +129,25 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Hide unapproved posts from everyone except their author, moderators, and administrators
+	var modStatus string
+	var authorID int
+	err = db.DB.QueryRow(`
+		SELECT COALESCE(pm.status, 'approved'), p.user_id
+		FROM posts p
+		LEFT JOIN post_moderation pm ON pm.post_id = p.id
+		WHERE p.id = ?`, postID).Scan(&modStatus, &authorID)
+	if err != nil {
+		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		log.Println("PostDetailHandler moderation status error:", err)
+		return
+	}
+	isStaff := session.Role == "moderator" || session.Role == "admin"
+	if modStatus != "approved" && !isStaff && (!session.Loggedin || session.UserID != authorID) {
+		ErrorPageHandler(w, r, http.StatusNotFound, "404 Not Found", "Post not found.")
+		return
+	}
+
 	// Query user reaction if logged in
 	if session.Loggedin {
 		_ = db.DB.QueryRow("SELECT reaction_type FROM post_reactions WHERE user_id = ? AND post_id = ?", session.UserID, postID).Scan(&post.UserReaction)
@@ -195,25 +213,13 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-
-		data := PostDetailPageData{
+		renderTemplate(w, r, http.StatusOK, "templates/post_detail.html", PostDetailPageData{
 			Post:         post,
 			Comments:     comments,
 			Loggedin:     session.Loggedin,
 			Username:     session.Username,
 			ErrorMessage: "",
-		}
-
-		tmpl, err := template.ParseFiles("templates/post_detail.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("PostDetailHandler template parse error:", err)
-			return
-		}
-
-		if err = tmpl.Execute(w, data); err != nil {
-			log.Println("PostDetailHandler template execute error:", err)
-		}
+		})
 		return
 	}
 
@@ -227,26 +233,13 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Empty comment case
 	if commentContent == "" {
-
-		data := PostDetailPageData{
+		renderTemplate(w, r, http.StatusBadRequest, "templates/post_detail.html", PostDetailPageData{
 			Post:         post,
 			Comments:     comments,
 			Loggedin:     session.Loggedin,
 			Username:     session.Username,
 			ErrorMessage: "Comment content cannot be empty.",
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		tmpl, err := template.ParseFiles("templates/post_detail.html")
-		if err != nil {
-			ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
-			log.Println("PostDetailHandler template parse error:", err)
-			return
-		}
-
-		if err = tmpl.Execute(w, data); err != nil {
-			log.Println("PostDetailHandler template execute error:", err)
-		}
+		})
 		return
 	}
 

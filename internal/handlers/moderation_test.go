@@ -70,6 +70,22 @@ func TestModerationRolesReportsApprovalAndCategories(t *testing.T) {
 		t.Fatal("pending post must not be visible to guests before moderator approval")
 	}
 
+	// Guest must also get 404 opening the pending post by direct URL
+	guestDetailRec := httptest.NewRecorder()
+	PostDetailHandler(guestDetailRec, httptest.NewRequest(http.MethodGet, "/post?id=1", nil))
+	if guestDetailRec.Code != http.StatusNotFound {
+		t.Fatalf("pending post by direct URL: guest status = %d, want 404", guestDetailRec.Code)
+	}
+
+	// Author can still view their own pending post
+	authorDetailReq := httptest.NewRequest(http.MethodGet, "/post?id=1", nil)
+	authorDetailReq.AddCookie(&http.Cookie{Name: "session_token", Value: "poster-tok"})
+	authorDetailRec := httptest.NewRecorder()
+	PostDetailHandler(authorDetailRec, authorDetailReq)
+	if authorDetailRec.Code != http.StatusOK {
+		t.Fatalf("pending post by direct URL: author status = %d, want 200", authorDetailRec.Code)
+	}
+
 	// 4. Moderator approves the pending post
 	approveForm := url.Values{"post_id": {"1"}}
 	approveReq := httptest.NewRequest(http.MethodPost, "/moderation/post/approve", strings.NewReader(approveForm.Encode()))
@@ -107,6 +123,15 @@ func TestModerationRolesReportsApprovalAndCategories(t *testing.T) {
 	RespondReportHandler(respRec, respReq)
 	if respRec.Code != http.StatusSeeOther {
 		t.Fatalf("expected 303 from RespondReportHandler, got %d", respRec.Code)
+	}
+
+	// Verify the resolved report is preserved as an audit record even after the post is deleted
+	var repStatus, repAdminResp string
+	if err := testDB.QueryRow("SELECT status, admin_response FROM moderation_reports WHERE id = 1").Scan(&repStatus, &repAdminResp); err != nil {
+		t.Fatalf("expected resolved moderation report to remain after post deletion: %v", err)
+	}
+	if repStatus != "resolved" || repAdminResp != "Removed post" {
+		t.Fatalf("unexpected report state: status=%q admin_response=%q", repStatus, repAdminResp)
 	}
 
 	// 6. Admin creates and deletes a category
