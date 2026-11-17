@@ -14,19 +14,14 @@
         <div class="auth-actions">
           {{if .Loggedin}}
             <span>Welcome, {{.Username}}</span>
+            <a href="/create_post" class="btn">+ New Post</a>
+            <a href="/moderation" class="btn btn-outline">Moderation</a>
             <form action="/logout" method="POST">
               <button type="submit" class="btn-outline">Logout</button>
             </form>
-            <form action="/create_post" method="GET">
-              <button type="submit">+ New Post</button>
-            </form>
           {{else}}
-            <form action="/login" method="GET">
-              <button type="submit">Login</button>
-            </form>
-            <form action="/register" method="GET">
-              <button type="submit">Register</button>
-            </form>
+            <a href="/login" class="btn btn-outline">Login</a>
+            <a href="/register" class="btn">Register</a>
           {{end}}
         </div>
     </div>
@@ -84,6 +79,7 @@
                  <!-- Post's elements  -->
                 <div class="post-card-top">
                     <div class="author-info">
+                        {{if .AuthorInitial}}<span class="avatar-circle avatar-small">{{.AuthorInitial}}</span>{{end}}
                         <span class="post-author">By <strong>{{.Author}}</strong></span>
                         <span class="meta-dot">&middot;</span>
                         <span class="post-date">{{.CreatedAt}}</span>
