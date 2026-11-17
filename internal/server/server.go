@@ -40,6 +40,8 @@ func registerRoutes() {
 }
 
 func StartServer() {
+	_ = LoadDotEnv(".env")
+	warnMissingOAuthConfig()
 	registerRoutes()
 
 	limiter := NewRateLimiter(20, 40)

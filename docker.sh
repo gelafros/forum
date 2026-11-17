@@ -44,7 +44,17 @@ stop_container() {
 run_container() {
     stop_container
     echo "==> Starting container '${CONTAINER_NAME}' on http://localhost:${PORT}..."
-    docker run -d --name "${CONTAINER_NAME}" -p "${PORT}:${PORT}" "${IMAGE_NAME}"
+    local env_args=()
+    if [ -f ".env" ]; then
+        echo "==> Loading environment variables from .env..."
+        env_args+=(--env-file .env)
+    fi
+    for var in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_REDIRECT_URL GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET GITHUB_REDIRECT_URL ENABLE_HTTPS MODERATION_PREAPPROVAL; do
+        if [ -n "${!var}" ]; then
+            env_args+=(-e "${var}=${!var}")
+        fi
+    done
+    docker run -d --name "${CONTAINER_NAME}" -p "${PORT}:${PORT}" "${env_args[@]}" "${IMAGE_NAME}"
     echo "==> Forum is now live at: http://localhost:${PORT}"
 }
 
