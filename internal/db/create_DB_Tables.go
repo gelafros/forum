@@ -2,38 +2,40 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
-// Migration runner that creates Database's tables from /db/migrations sql files
+const migrationsDir = "./internal/db/migrations"
+
+// CreateDBTables runs every .sql migration in internal/db/migrations in filename order.
 func CreateDBTables(forumDB *sql.DB) error {
 	log.Println("Running migrations...")
 
-	// Read files from directory
-	dirFiles, err := os.ReadDir("./internal/db/migrations")
+	dirFiles, err := os.ReadDir(migrationsDir)
 	if err != nil {
-		log.Fatalf("reading db/migrations folder files: %v", err)
+		return fmt.Errorf("reading migrations folder: %w", err)
 	}
 
-	// Collect only the .sql files
+	var filenames []string
 	for _, file := range dirFiles {
-		filename := file.Name() // Take ONLY the string's name of the filename with method Name()
-		if file.IsDir() || !strings.HasSuffix(filename, ".sql") {
-			continue // skip the file if it IS a directory (method IsDir()) OR it is NOT am .sql file
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".sql") {
+			filenames = append(filenames, file.Name())
 		}
+	}
+	sort.Strings(filenames)
 
-		path := "./internal/db/migrations/" + filename
-		sqlBytes, err := os.ReadFile(path)
+	for _, filename := range filenames {
+		sqlBytes, err := os.ReadFile(filepath.Join(migrationsDir, filename))
 		if err != nil {
-			log.Fatalf("sqlBytes file failed error: %v", err)
+			return fmt.Errorf("reading migration %s: %w", filename, err)
 		}
-
-		// Execute migration (.Exec() needs a string to execute)
-		_, err = forumDB.Exec(string(sqlBytes)) // the content of each migration in ./db/migrations/
-		if err != nil {
-			log.Fatalf("execute migration: %s with error: %v", filename, err)
+		if _, err := forumDB.Exec(string(sqlBytes)); err != nil {
+			return fmt.Errorf("executing migration %s: %w", filename, err)
 		}
 	}
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"forum/internal/db"
 	"forum/internal/server"
 
@@ -14,7 +16,9 @@ func main() {
 	defer db.DB.Close() // Close Database for freeing system resources from sql.Open inside db.go
 
 	// Create tables inside DB (Database)
-	db.CreateDBTables(db.DB)
+	if err := db.CreateDBTables(db.DB); err != nil {
+		log.Fatal("Migration error: ", err)
+	}
 
 	// Starting Server :8080
 	server.StartServer()
