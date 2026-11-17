@@ -19,7 +19,9 @@ posts and comments. No frontend frameworks or JavaScript are used.
 - [Database](#database)
 - [Inspecting the Database](#inspecting-the-database)
 - [Error Handling](#error-handling)
+- [Configuration](#configuration)
 - [Authors](#authors)
+- [License](#license)
 
 ---
 
@@ -82,7 +84,8 @@ posts and comments. No frontend frameworks or JavaScript are used.
 
 - Go standard library
 - [`github.com/mattn/go-sqlite3`](https://github.com/mattn/go-sqlite3) — SQLite driver
-- [`github.com/google/uuid`](https://github.com/google/uuid) — session tokens
+- [`github.com/google/uuid`](https://github.com/google/uuid) — session & CSRF tokens, image filenames
+- [`golang.org/x/crypto/bcrypt`](https://pkg.go.dev/golang.org/x/crypto/bcrypt) — password hashing
 
 ---
 
@@ -258,12 +261,14 @@ CGO_ENABLED=1 go test ./...
 
 The tests use temporary SQLite databases (not the real `forum.db`) and cover:
 
-- database migrations
-- route registration
-- registration, login, sessions and logout
-- posts, comments and categories
-- likes/dislikes
-- post filters
+- database migrations & schema verification
+- route registration & `.env` loading
+- registration, login, bcrypt password hashing, sessions and logout
+- Google & GitHub OAuth 2.0 login, callback, CSRF `state` verification and account linking
+- posts, comments, categories and image upload validation (`JPEG`, `PNG`, `GIF`, `SVG`, 20 MB limit)
+- likes/dislikes and post filters
+- 4-tier moderation roles, post approval, reports and category management
+- rate limiting, TLS 1.2+ certificate generation and AES-256-GCM encryption
 
 ---
 
@@ -275,14 +280,16 @@ forum/
 │   └── main.go                 # Entry point: opens DB, runs migrations, starts server
 ├── internal/
 │   ├── db/
-│   │   ├── create_DB.go        # Opens the SQLite connection
-│   │   ├── create_DB_Tables.go # Runs the SQL migration files
-│   │   └── migrations/         # CREATE TABLE scripts (001 – 008)
-│   ├── handlers/               # HTTP handlers (auth, posts, comments, reactions, errors)
-│   └── server/
-│       └── server.go           # Route registration and HTTP server
+│   │   ├── create_DB.go        # Opens the SQLite connection (WAL mode, foreign keys)
+│   │   ├── create_DB_Tables.go # Runs the SQL migration files in order
+│   │   └── migrations/         # CREATE TABLE scripts (001 – 011)
+│   ├── handlers/               # HTTP handlers (auth, OAuth, posts, images, moderation, reactions)
+│   ├── security/               # AES-256-GCM authenticated encryption utilities
+│   └── server/                 # Route registration, TLS 1.2+, rate limiter, .env loader
 ├── templates/                  # HTML templates and CSS
-├── Dockerfile                  # Multi-stage Docker build
+├── .env.example                # Environment variable template (OAuth, HTTPS, moderation)
+├── .dockerignore               # Excludes secrets and local artifacts from Docker build context
+├── Dockerfile                  # Multi-stage Docker build (Golang Alpine -> Alpine)
 ├── docker.sh                   # Helper script to build and run with Docker
 ├── go.mod
 └── go.sum
@@ -334,9 +341,16 @@ erDiagram
     users ||--o{ posts : writes
     users ||--o{ comments : writes
     users ||--o| sessions : has
+    users ||--o{ oauth_accounts : links
+    users ||--o| user_roles : assigned
+    users ||--o| role_requests : requests
+    users ||--o{ moderation_reports : submits
     users ||--o{ post_reactions : reacts
     users ||--o{ comment_reactions : reacts
     posts ||--o{ comments : has
+    posts ||--o| post_images : attaches
+    posts ||--o| post_moderation : reviewed
+    posts ||--o{ moderation_reports : reported
     posts ||--o{ post_categories : tagged
     categories ||--o{ post_categories : groups
     posts ||--o{ post_reactions : receives
@@ -398,12 +412,35 @@ terminal, never sent to the browser.
 
 | Status | When |
 | --- | --- |
-| `400 Bad Request` | Empty or invalid form data, invalid category |
+| `400 Bad Request` | Empty or invalid form data, invalid category, invalid/oversized image, invalid OAuth state |
 | `401 Unauthorized` | Guest tries to comment/react, or wrong login credentials |
-| `404 Not Found` | Unknown page, post, comment or category |
+| `403 Forbidden` | Insufficient role privileges for moderation or admin actions |
+| `404 Not Found` | Unknown page, post, comment, image, or category |
 | `405 Method Not Allowed` | Wrong HTTP method for a route |
-| `409 Conflict` | Username or email already registered |
+| `409 Conflict` | Username, email, or category already exists |
+| `429 Too Many Requests` | Per-IP rate limit exceeded |
 | `500 Internal Server Error` | Unexpected server or database error |
+| `502 Bad Gateway` | Upstream OAuth provider token or profile exchange failed |
+| `503 Service Unavailable` | OAuth provider credentials (`GOOGLE_CLIENT_ID` / `GITHUB_CLIENT_ID`) not configured |
+
+---
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8080` | HTTP/HTTPS listening port. |
+| `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS so the session cookie gets the `Secure` flag. |
+| `ENABLE_HTTPS` | `false` | Set to `true` to serve over HTTPS with TLS 1.2+ cipher suites (auto-generates `certs/cert.pem` & `certs/key.pem` if missing). |
+| `TLS_CERT_FILE` | `certs/cert.pem` | Path to TLS certificate PEM file. |
+| `TLS_KEY_FILE` | `certs/key.pem` | Path to TLS private key PEM file. |
+| `MODERATION_PREAPPROVAL` | `false` | Set to `true` to require Moderator/Admin approval before new user posts become publicly visible. |
+| `GOOGLE_CLIENT_ID` | — | Google OAuth 2.0 Client ID |
+| `GOOGLE_CLIENT_SECRET` | — | Google OAuth 2.0 Client Secret |
+| `GOOGLE_REDIRECT_URL` | `http://localhost:8080/auth/google/callback` | Google OAuth 2.0 callback URL |
+| `GITHUB_CLIENT_ID` | — | GitHub OAuth 2.0 Client ID |
+| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth 2.0 Client Secret |
+| `GITHUB_REDIRECT_URL` | `http://localhost:8080/auth/github/callback` | GitHub OAuth 2.0 callback URL |
 
 ---
 
@@ -420,19 +457,3 @@ Zone01 Athens
 ## License
 
 MIT, see [LICENSE](LICENSE).
-
-## Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `COOKIE_SECURE` | `false` | Set to `true` when serving over HTTPS so the session cookie gets the `Secure` flag. |
-| `ENABLE_HTTPS` | `false` | Set to `true` to serve over HTTPS with TLS 1.2+ cipher suites (auto-generates `certs/cert.pem` & `certs/key.pem` if missing). |
-| `TLS_CERT_FILE` | `certs/cert.pem` | Path to TLS certificate PEM file. |
-| `TLS_KEY_FILE` | `certs/key.pem` | Path to TLS private key PEM file. |
-| `MODERATION_PREAPPROVAL` | `false` | Set to `true` to require Moderator/Admin approval before new user posts become publicly visible. |
-| `GOOGLE_CLIENT_ID` | — | Google OAuth 2.0 Client ID |
-| `GOOGLE_CLIENT_SECRET` | — | Google OAuth 2.0 Client Secret |
-| `GOOGLE_REDIRECT_URL` | `http://localhost:8080/auth/google/callback` | Google OAuth 2.0 callback URL |
-| `GITHUB_CLIENT_ID` | — | GitHub OAuth 2.0 Client ID |
-| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth 2.0 Client Secret |
-| `GITHUB_REDIRECT_URL` | `http://localhost:8080/auth/github/callback` | GitHub OAuth 2.0 callback URL |

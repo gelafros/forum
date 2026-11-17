@@ -1,13 +1,13 @@
-# SQLite temp files
-*.db-shm
-*.db-wal
-
-# Go binaries
-forum
+# SQLite database and temp files
 *.db
 *.db-shm
 *.db-wal
+
+# Go binaries & logs
+forum
 *.log
+
+# Local environment & IDE files
 .env
 .DS_Store
 .vscode/
