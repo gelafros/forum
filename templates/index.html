@@ -29,6 +29,20 @@
 
 <div class="container">
 
+    <!-- Community Hero Banner -->
+    <section class="hero-banner">
+        <div>
+            <span class="hero-eyebrow">⚡ Zone01 Developer Community</span>
+            <h2 class="hero-title">Discuss, build &amp; share knowledge.</h2>
+            <p class="hero-subtitle">Explore technical discussions, ask questions, and connect with peers across categories.</p>
+        </div>
+        {{if .Loggedin}}
+            <a href="/create_post" class="btn">+ Start a Discussion</a>
+        {{else}}
+            <a href="/register" class="btn">Join the Community &rarr;</a>
+        {{end}}
+    </section>
+
     <!-- Category & Subforum Filter Navigation -->
     <nav class="filter-nav" aria-label="Filter posts">
         <div class="filter-group">
