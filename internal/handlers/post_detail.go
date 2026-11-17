@@ -44,6 +44,7 @@ type PostDetailPageData struct {
 	Comments     []Comment
 	Loggedin     bool
 	Username     string
+	Role         string
 	ErrorMessage string
 }
 
@@ -218,6 +219,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			Comments:     comments,
 			Loggedin:     session.Loggedin,
 			Username:     session.Username,
+			Role:         session.Role,
 			ErrorMessage: "",
 		})
 		return
@@ -238,6 +240,7 @@ func PostDetailHandler(w http.ResponseWriter, r *http.Request) {
 			Comments:     comments,
 			Loggedin:     session.Loggedin,
 			Username:     session.Username,
+			Role:         session.Role,
 			ErrorMessage: "Comment content cannot be empty.",
 		})
 		return

@@ -11,6 +11,13 @@
 <header class="site-header">
     <div class="inner">
         <h1><a href="/">💬 Forum — Zone01 Athens</a></h1>
+        <div class="auth-actions">
+            {{if .Username}}<span>Welcome, {{.Username}}</span>{{end}}
+            <a href="/moderation" class="btn btn-outline">Moderation</a>
+            <form action="/logout" method="POST">
+                <button type="submit" class="btn-outline">Logout</button>
+            </form>
+        </div>
     </div>
 </header>
 
@@ -47,7 +54,7 @@
                 <div class="categories-group">
                     {{range .Categories}}
                         <label>
-                            <input type="checkbox" name="categories" value="{{.ID}}">
+                            <input type="checkbox" name="categories" value="{{.ID}}" {{if index $.SelectedCategories .ID}}checked{{end}}>
                             {{.Name}}
                         </label>
                     {{end}}

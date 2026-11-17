@@ -27,13 +27,14 @@ type PostSummary struct {
 }
 
 type HomeData struct {
-	Username       string
-	Loggedin       bool
-	Posts          []PostSummary
-	Categories     []Category
-	ActiveCategory int
-	ActiveFilter   string
-	CurrentPath    string
+	Username           string
+	Loggedin           bool
+	Posts              []PostSummary
+	Categories         []Category
+	ActiveCategory     int
+	ActiveCategoryName string
+	ActiveFilter       string
+	CurrentPath        string
 }
 
 // loadPosts fetches posts newest-first with snippet, counts, and optional category/user filters.
@@ -188,6 +189,15 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	categories := LoadCategories()
+	var activeCategoryName string
+	if categoryID > 0 {
+		for _, c := range categories {
+			if c.ID == categoryID {
+				activeCategoryName = c.Name
+				break
+			}
+		}
+	}
 
 	currentPath := r.URL.RequestURI()
 	if currentPath == "" || !strings.HasPrefix(currentPath, "/") || strings.HasPrefix(currentPath, "//") {
@@ -195,13 +205,14 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := HomeData{
-		Username:       session.Username,
-		Loggedin:       session.Loggedin,
-		Posts:          posts,
-		Categories:     categories,
-		ActiveCategory: categoryID,
-		ActiveFilter:   filterStr,
-		CurrentPath:    currentPath,
+		Username:           session.Username,
+		Loggedin:           session.Loggedin,
+		Posts:              posts,
+		Categories:         categories,
+		ActiveCategory:     categoryID,
+		ActiveCategoryName: activeCategoryName,
+		ActiveFilter:       filterStr,
+		CurrentPath:        currentPath,
 	}
 
 	renderTemplate(w, r, http.StatusOK, "templates/index.html", data)

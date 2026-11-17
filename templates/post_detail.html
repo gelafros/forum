@@ -78,7 +78,13 @@
             <!-- Show Likes/Dislikes counts (guest)-->
             <span class="reaction-badge">👍 {{.Post.Likes}}</span>
             <span class="reaction-badge">👎 {{.Post.Dislikes}}</span>
-          {{end}}  
+          {{end}}
+          {{if or (eq .Role "moderator") (eq .Role "admin")}}
+            <form action="/moderation/post/delete" method="POST" style="margin-left:auto;">
+              <input type="hidden" name="post_id" value="{{.Post.ID}}">
+              <button type="submit" class="btn btn-danger-outline" title="Delete this post">Delete Post</button>
+            </form>
+          {{end}}
         </div>
     </article>
 
@@ -112,6 +118,13 @@
                           {{else}}
                             <span class="reaction-badge">👍 {{.Likes}}</span>
                             <span class="reaction-badge">👎 {{.Dislikes}}</span>
+                          {{end}}
+                          {{if or (eq $.Role "moderator") (eq $.Role "admin")}}
+                            <form action="/moderation/comment/delete" method="POST" style="margin-left:auto;">
+                              <input type="hidden" name="comment_id" value="{{.ID}}">
+                              <input type="hidden" name="redirect_post" value="true">
+                              <button type="submit" class="btn btn-danger-outline" style="padding:0.32rem 0.75rem;font-size:0.78rem;">Delete</button>
+                            </form>
                           {{end}}
                         </div>
                     </div>

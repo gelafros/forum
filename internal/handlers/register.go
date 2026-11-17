@@ -26,6 +26,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
+		if session, err := CheckSession(r); err == nil && session.Loggedin {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 		renderTemplate(w, r, http.StatusOK, "templates/registration_form.html", RegisterPageData{})
 		return
 	}

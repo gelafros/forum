@@ -14,14 +14,12 @@
         <div class="auth-actions">
           {{if .Loggedin}}
             <span>Welcome, {{.Username}}</span>
-            <a href="/create_post" class="btn">+ New Post</a>
             <a href="/moderation" class="btn btn-outline">Moderation</a>
             <form action="/logout" method="POST">
               <button type="submit" class="btn-outline">Logout</button>
             </form>
           {{else}}
-            <a href="/login" class="btn btn-outline">Login</a>
-            <a href="/register" class="btn">Register</a>
+            <a href="/login" class="btn btn-outline">Sign In</a>
           {{end}}
         </div>
     </div>
@@ -70,6 +68,8 @@
                     My Created Posts
                 {{else if eq .ActiveFilter "liked"}}
                     Posts I Liked
+                {{else if .ActiveCategoryName}}
+                    {{.ActiveCategoryName}}
                 {{else if gt .ActiveCategory 0}}
                     Filtered by Category
                 {{else}}

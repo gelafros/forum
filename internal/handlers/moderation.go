@@ -349,6 +349,9 @@ func DeleteCommentModerationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var postID int
+	_ = db.DB.QueryRow("SELECT post_id FROM comments WHERE id = ?", commentID).Scan(&postID)
+
 	tx, err := db.DB.Begin()
 	if err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
@@ -367,6 +370,10 @@ func DeleteCommentModerationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := tx.Commit(); err != nil {
 		ErrorPageHandler(w, r, http.StatusInternalServerError, "Internal Server Error", errInternal)
+		return
+	}
+	if postID > 0 && r.FormValue("redirect_post") == "true" {
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 		return
 	}
 	http.Redirect(w, r, "/moderation?msg=Comment+deleted", http.StatusSeeOther)

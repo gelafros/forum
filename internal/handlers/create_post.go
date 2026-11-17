@@ -11,10 +11,22 @@ import (
 )
 
 type CreatePostData struct {
-	Categories   []Category
-	Title        string
-	Content      string
-	ErrorMessage string
+	Username           string
+	Categories         []Category
+	SelectedCategories map[int]bool
+	Title              string
+	Content            string
+	ErrorMessage       string
+}
+
+func parseSelectedCategorySet(raw []string) map[int]bool {
+	set := make(map[int]bool, len(raw))
+	for _, s := range raw {
+		if id, err := strconv.Atoi(s); err == nil && id > 0 {
+			set[id] = true
+		}
+	}
+	return set
 }
 
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +48,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		renderTemplate(w, r, http.StatusOK, "templates/create_post.html", CreatePostData{
+			Username:   session.Username,
 			Categories: LoadCategories(),
 		})
 		return
@@ -46,22 +59,27 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		title := strings.TrimSpace(r.FormValue("title"))
 		content := strings.TrimSpace(r.FormValue("content"))
 		categories := r.Form["categories"]
+		selectedSet := parseSelectedCategorySet(categories)
 
 		if imgErr != nil {
 			renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
-				Categories:   LoadCategories(),
-				Title:        title,
-				Content:      content,
-				ErrorMessage: imgErr.Error(),
+				Username:           session.Username,
+				Categories:         LoadCategories(),
+				SelectedCategories: selectedSet,
+				Title:              title,
+				Content:            content,
+				ErrorMessage:       imgErr.Error(),
 			})
 			return
 		}
 		if title == "" || content == "" || len(categories) == 0 {
 			renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
-				Categories:   LoadCategories(),
-				Title:        title,
-				Content:      content,
-				ErrorMessage: "All fields are required. Please provide a title, content, and select at least one category.",
+				Username:           session.Username,
+				Categories:         LoadCategories(),
+				SelectedCategories: selectedSet,
+				Title:              title,
+				Content:            content,
+				ErrorMessage:       "All fields are required. Please provide a title, content, and select at least one category.",
 			})
 			return
 		}
@@ -78,10 +96,12 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			catID, err := strconv.Atoi(catStr)
 			if err != nil || !validCategories[catID] {
 				renderTemplate(w, r, http.StatusBadRequest, "templates/create_post.html", CreatePostData{
-					Categories:   allCategories,
-					Title:        title,
-					Content:      content,
-					ErrorMessage: "Please select a valid category.",
+					Username:           session.Username,
+					Categories:         allCategories,
+					SelectedCategories: selectedSet,
+					Title:              title,
+					Content:            content,
+					ErrorMessage:       "Please select a valid category.",
 				})
 				return
 			}
