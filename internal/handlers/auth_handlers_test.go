@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"database/sql"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,6 +13,7 @@ import (
 	"forum/internal/db"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func setupHandlerTestDB(t *testing.T) *sql.DB {
@@ -27,24 +26,9 @@ func setupHandlerTestDB(t *testing.T) *sql.DB {
 	}
 	testDB.SetMaxOpenConns(1)
 
-	files, err := os.ReadDir("internal/db/migrations")
-	if err != nil {
+	if err := db.CreateDBTables(testDB); err != nil {
 		testDB.Close()
 		t.Fatal(err)
-	}
-	for _, file := range files {
-		if file.IsDir() || !strings.HasSuffix(file.Name(), ".sql") {
-			continue
-		}
-		sqlBytes, err := os.ReadFile(filepath.Join("internal/db/migrations", file.Name()))
-		if err != nil {
-			testDB.Close()
-			t.Fatal(err)
-		}
-		if _, err := testDB.Exec(string(sqlBytes)); err != nil {
-			testDB.Close()
-			t.Fatalf("apply %s: %v", file.Name(), err)
-		}
 	}
 
 	previousDB := db.DB

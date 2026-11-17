@@ -1,9 +1,13 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"forum/internal/handlers"
@@ -64,6 +68,10 @@ func StartServer() {
 		IdleTimeout:       60 * time.Second,
 	}
 
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, os.Interrupt, syscall.SIGTERM)
+
+	errCh := make(chan error, 1)
 	if os.Getenv("ENABLE_HTTPS") == "true" {
 		certFile := os.Getenv("TLS_CERT_FILE")
 		if certFile == "" {
@@ -79,13 +87,30 @@ func StartServer() {
 		_ = os.Setenv("COOKIE_SECURE", "true")
 		log.Printf("HTTPS server is running on https://localhost%s\n", addr)
 		log.Println("Press Ctrl + C to terminate the server...")
-		log.Fatal(srv.ListenAndServeTLS(certFile, keyFile))
-		return
+		go func() {
+			errCh <- srv.ListenAndServeTLS(certFile, keyFile)
+		}()
+	} else {
+		log.Printf("Server is running on http://localhost%s\n", addr)
+		log.Println("Press Ctrl + C to terminate the server...")
+		go func() {
+			errCh <- srv.ListenAndServe()
+		}()
 	}
 
-	log.Printf("Server is running on http://localhost%s\n", addr)
-	log.Println("Press Ctrl + C to terminate the server...")
-	log.Fatal(srv.ListenAndServe())
+	select {
+	case err := <-errCh:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Server error: %v", err)
+		}
+	case sig := <-stopCh:
+		log.Printf("Received signal %v, shutting down gracefully...", sig)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("Graceful shutdown error: %v", err)
+		}
+	}
 }
 
 // maxBodyBytes caps standard request bodies at 1 MiB, while /create_post allows up to 25 MiB

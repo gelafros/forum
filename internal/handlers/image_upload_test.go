@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -118,5 +117,4 @@ func TestCreatePostWithImagesAndSizeLimit(t *testing.T) {
 	if badRec.Code != http.StatusBadRequest || !strings.Contains(badRec.Body.String(), "Unsupported image format") {
 		t.Fatalf("expected 400 Bad Request for unsupported format, got status=%d", badRec.Code)
 	}
-	_ = strconv.Itoa(userID)
 }

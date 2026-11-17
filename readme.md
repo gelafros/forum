@@ -282,7 +282,7 @@ forum/
 │   ├── db/
 │   │   ├── create_DB.go        # Opens the SQLite connection (WAL mode, foreign keys)
 │   │   ├── create_DB_Tables.go # Runs the SQL migration files in order
-│   │   └── migrations/         # CREATE TABLE scripts (001 – 011)
+│   │   └── migrations/         # CREATE TABLE & INDEX scripts (001 – 012)
 │   ├── handlers/               # HTTP handlers (auth, OAuth, posts, images, moderation, reactions)
 │   ├── security/               # AES-256-GCM authenticated encryption utilities
 │   └── server/                 # Route registration, TLS 1.2+, rate limiter, .env loader

@@ -36,6 +36,9 @@ RUN go build -o forum ./cmd/main.go
 # Defining the alpine version
 FROM alpine:latest
 
+# Install root CA certificates for outbound HTTPS OAuth 2.0 requests and create a non-root user
+RUN apk add --no-cache ca-certificates && adduser -D -g '' appuser
+
 # Set working directory inside image
 WORKDIR /app
 
@@ -43,6 +46,10 @@ WORKDIR /app
 COPY --from=builder /app/forum .
 COPY --from=builder /app/internal/db/migrations ./internal/db/migrations
 COPY --from=builder /app/templates ./templates
+
+RUN mkdir -p /app/internal/db /app/uploads /app/certs && chown -R appuser:appuser /app
+
+USER appuser
 
 # Exposing port 8080
 # Just document (saying) that the container uses port 8080
